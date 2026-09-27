@@ -439,7 +439,8 @@ async function loadModels() {
           .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
           .map(m => m.name.replace("models/", ""))
           .filter(n => n.startsWith("gemini") && !/embedding|tts|image-generation|live|audio/.test(n));
-        if (list.length) names = list.sort().reverse();
+        const latest = latestOnly(list);
+        if (latest.length) names = latest;
       }
     } catch {}
   }
@@ -450,7 +451,27 @@ async function loadModels() {
   sel.value = preferred;
   settings.model = preferred;
 }
-$("model").onchange = (e) => { settings.model = e.target.value; store.set("gc.settings", settings); };
+// Keep only the newest version of each model tier (Pro, Flash, Flash-Lite…),
+// hiding older generations and dated snapshots like "-001" or "-05-20".
+function latestOnly(list) {
+  const newest = {};
+  const parsed = [];
+  for (const name of list) {
+    const m = name.match(/^gemini-(\d+(?:\.\d+)?)-([a-z]+(?:-lite)?)(.*)$/);
+    if (!m) continue;
+    const [, ver, tier, rest] = m;
+    if (/-\d{3}$|-\d{2}-\d{2}|\d{4}|exp/.test(rest)) continue;
+    const v = parseFloat(ver);
+    parsed.push({ name, tier, v, stable: rest === "" });
+    newest[tier] = Math.max(newest[tier] ?? 0, v);
+  }
+  const order = { pro: 0, flash: 1, "flash-lite": 2 };
+  return parsed
+    .filter(p => p.v === newest[p.tier])
+    .sort((a, b) => (order[a.tier] ?? 9) - (order[b.tier] ?? 9) || b.stable - a.stable || a.name.localeCompare(b.name))
+    .map(p => p.name);
+}
+$("model").onchange =(e) => { settings.model = e.target.value; store.set("gc.settings", settings); };
 
 /* ---------- Rendering ---------- */
 function renderAll() {
