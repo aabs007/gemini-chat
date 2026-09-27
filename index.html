@@ -277,6 +277,19 @@
   #attachments:not(:empty) { padding: 6px 6px 10px; }
   .att { position: relative; animation: rise .3s both; }
   .att img { width: 60px; height: 60px; object-fit: cover; border-radius: 12px; display: block; }
+  .att.file {
+    display: flex; align-items: center; gap: 8px;
+    height: 60px; max-width: 240px; padding: 0 16px 0 12px;
+    background: var(--bg-alt); border-radius: 12px; font-size: 14px;
+  }
+  .att.file .ic, .filechip .ic { font-size: 22px; flex: none; }
+  .att.file .nm, .filechip .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .att.file small { display: block; color: var(--muted); font-size: 12px; }
+  .filechip {
+    display: flex; align-items: center; gap: 8px; max-width: 260px;
+    background: rgba(255,255,255,.18); border-radius: 12px;
+    padding: 8px 12px; margin: 2px 0 8px; font-size: 15px;
+  }
   .att button {
     position: absolute; top: -6px; right: -6px; width: 22px; height: 22px;
     border-radius: 50%; border: 2px solid var(--panel); background: var(--text); color: var(--bg);
@@ -371,10 +384,10 @@
   <div class="composer">
     <div id="attachments"></div>
     <div class="row">
-      <button class="round" id="attachBtn" title="Attach image">
+      <button class="round" id="attachBtn" title="Attach image or PDF">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
-      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf" multiple hidden>
       <textarea id="input" rows="1" placeholder="Ask anything"></textarea>
       <button class="round" id="send" title="Send"></button>
     </div>
@@ -563,7 +576,7 @@ function renderHero() {
       <div class="eyebrow">Gemini · Gemma · Groq · Mistral</div>
       <h2>One window.<br><span class="grad">Every great model.</span></h2>
       <p>${hasKey
-        ? "Write, learn, plan and code, or drop in a photo and ask about it."
+        ? "Write, learn, plan and code, or drop in a photo or PDF and ask about it."
         : "Add a free Gemini, Groq or Mistral API key to get started. It only takes a minute."}</p>
       ${hasKey
         ? `<div class="cards">${SUGGESTIONS.map((s, i) =>
@@ -585,7 +598,13 @@ function addBubble(m, extraClass = "") {
   b.className = "bubble";
   if (m.role === "user") {
     for (const p of m.parts) {
-      if (p.inlineData) {
+      if (p.fileName) {
+        const chip = document.createElement("div");
+        chip.className = "filechip";
+        chip.innerHTML = `<span class="ic">📄</span><span class="nm"></span>`;
+        chip.querySelector(".nm").textContent = p.fileName;
+        b.appendChild(chip);
+      } else if (p.inlineData) {
         const img = document.createElement("img");
         img.className = "thumb";
         img.src = `data:${p.inlineData.mimeType};base64,${p.inlineData.data}`;
@@ -626,9 +645,15 @@ async function send() {
   if (controller) { controller.abort(); return; }
   const text = $("input").value.trim();
   if (!text && !pending.length) return;
+  if (pending.some(p => p.text === null)) return;   // a PDF is still being read
   if (!keyFor(settings.model)) { openSettings(); return; }
 
-  const parts = [...pending.map(p => ({ inlineData: p })), ...(text ? [{ text }] : [])];
+  const parts = [
+    ...pending.map(p => p.name
+      ? { inlineData: { mimeType: p.mimeType, data: p.data }, fileName: p.name, fileText: p.text }
+      : { inlineData: { mimeType: p.mimeType, data: p.data } }),
+    ...(text ? [{ text }] : []),
+  ];
   const userMsg = { role: "user", parts };
   if (!history.length) $("messages").innerHTML = "";
   history.push(userMsg);
@@ -707,14 +732,21 @@ async function send() {
 }
 
 function geminiRequest() {
+  const gemma = settings.model.startsWith("gemma");
+  const contents = history.map(m => ({
+    role: m.role,
+    parts: m.parts.map(p => p.fileName
+      ? (gemma ? { text: pdfAsText(p) } : { inlineData: p.inlineData })
+      : p),
+  }));
   const body = {
-    contents: history,
+    contents,
     generationConfig: { temperature: Number(settings.temperature) },
   };
   const sys = settings.systemPrompt.trim();
-  if (sys && settings.model.startsWith("gemma")) {
+  if (sys && gemma) {
     // Gemma doesn't accept system instructions, so fold them into the first message.
-    const [first, ...rest] = history;
+    const [first, ...rest] = contents;
     body.contents = [{ role: "user", parts: [{ text: `Instructions: ${sys}` }, ...first.parts] }, ...rest];
   } else if (sys) {
     body.systemInstruction = { parts: [{ text: sys }] };
@@ -735,8 +767,8 @@ function openaiRequest() {
   const sys = settings.systemPrompt.trim();
   if (sys) messages.push({ role: "system", content: sys });
   for (const m of history) {
-    const text = m.parts.filter(p => p.text).map(p => p.text).join("\n");
-    const images = m.parts.filter(p => p.inlineData);
+    const text = [...m.parts.filter(p => p.fileName).map(pdfAsText), ...m.parts.filter(p => p.text).map(p => p.text)].join("\n\n");
+    const images = m.parts.filter(p => p.inlineData && !p.fileName);
     messages.push({
       role: m.role === "model" ? "assistant" : "user",
       content: images.length
@@ -757,6 +789,11 @@ function openaiRequest() {
   }];
 }
 
+// For models that can't read PDF files directly, send the text we pulled out of it.
+function pdfAsText(p) {
+  return `[PDF: ${p.fileName}]\n${p.fileText || "(No selectable text found. It may be a scanned PDF; try a Gemini model.)"}`;
+}
+
 function setBusy(b) {
   $("send").innerHTML = b ? ICON_STOP : ICON_SEND;
   $("send").title = b ? "Stop" : "Send";
@@ -767,41 +804,86 @@ function updateSend() {
 }
 
 function saveHistory() {
-  // Keep localStorage small: don't persist image data across reloads
-  const slim = history.map(m => ({ role: m.role, parts: m.parts.map(p => p.inlineData ? { text: "[image]" } : p) }));
+  // Keep localStorage small: don't persist image or PDF data across reloads
+  const slim = history.map(m => ({ role: m.role, parts: m.parts.map(p =>
+    p.fileName ? { text: `[PDF: ${p.fileName}]` } : p.inlineData ? { text: "[image]" } : p) }));
   store.set("gc.history", slim);
 }
 
 /* ---------- Attachments ---------- */
 $("attachBtn").onclick = () => $("fileInput").click();
 $("fileInput").onchange = async (e) => {
-  for (const f of e.target.files) await addImage(f);
+  for (const f of e.target.files) await addFile(f);
   e.target.value = "";
 };
 document.addEventListener("paste", async (e) => {
   for (const item of e.clipboardData?.items || []) {
-    if (item.type.startsWith("image/")) await addImage(item.getAsFile());
+    if (item.type.startsWith("image/") || item.type === "application/pdf") await addFile(item.getAsFile());
   }
 });
-function addImage(file) {
-  return new Promise((resolve) => {
+const MAX_FILE_MB = 18;   // Gemini accepts up to ~20 MB per request when files are sent inline
+async function addFile(file) {
+  const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+  if (!isPdf && !file.type.startsWith("image/")) return;
+  if (file.size > MAX_FILE_MB * 1024 * 1024) {
+    alert(`"${file.name}" is too big. Files must be under ${MAX_FILE_MB} MB.`);
+    return;
+  }
+  const dataUrl = await new Promise((resolve) => {
     const r = new FileReader();
-    r.onload = () => {
-      const [, mimeType, data] = r.result.match(/^data:(.+?);base64,(.*)$/);
-      pending.push({ mimeType, data });
-      renderAttachments();
-      resolve();
-    };
+    r.onload = () => resolve(r.result);
     r.readAsDataURL(file);
   });
+  const data = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  if (!isPdf) {
+    pending.push({ mimeType: file.type, data });
+  } else {
+    const item = { mimeType: "application/pdf", data, name: file.name || "document.pdf", text: null };
+    pending.push(item);
+    renderAttachments();
+    item.text = await extractPdfText(file).catch(() => "");
+  }
+  renderAttachments();
+}
+
+// Pull the text out of a PDF in the browser, so non-Gemini models can read it too.
+let pdfjsReady;
+function loadPdfJs() {
+  pdfjsReady ??= new Promise((resolve, reject) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    sc.onload = () => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      resolve(pdfjsLib);
+    };
+    sc.onerror = reject;
+    document.head.appendChild(sc);
+  });
+  return pdfjsReady;
+}
+async function extractPdfText(file) {
+  const lib = await loadPdfJs();
+  const pdf = await lib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const content = await (await pdf.getPage(i)).getTextContent();
+    pages.push(content.items.map(it => it.str + (it.hasEOL ? "\n" : "")).join(""));
+  }
+  return pages.join("\n\n").trim();
 }
 function renderAttachments() {
   const box = $("attachments");
   box.innerHTML = "";
   pending.forEach((p, i) => {
     const d = document.createElement("div");
-    d.className = "att";
-    d.innerHTML = `<img src="data:${p.mimeType};base64,${p.data}"><button title="Remove">✕</button>`;
+    if (p.name) {
+      d.className = "att file";
+      d.innerHTML = `<span class="ic">📄</span><div style="min-width:0"><div class="nm"></div><small>${p.text === null ? "Reading…" : "PDF"}</small></div><button title="Remove">✕</button>`;
+      d.querySelector(".nm").textContent = p.name;
+    } else {
+      d.className = "att";
+      d.innerHTML = `<img src="data:${p.mimeType};base64,${p.data}"><button title="Remove">✕</button>`;
+    }
     d.querySelector("button").onclick = () => { pending.splice(i, 1); renderAttachments(); };
     box.appendChild(d);
   });
