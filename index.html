@@ -48,6 +48,24 @@
       --grad: linear-gradient(100deg, #5b8cff 0%, #a78bfa 45%, #f472b6 80%, #ffa45c 100%);
     }
   }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #000000;
+    --bg-alt: #0d0d0f;
+    --panel: #1d1d1f;
+    --glass: rgba(22, 22, 23, 0.72);
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --hairline: rgba(255, 255, 255, 0.12);
+    --accent: #2997ff;
+    --accent-hover: #47a6ff;
+    --on-accent: #ffffff;
+    --code-bg: #1d1d1f;
+    --danger: #ff453a;
+    --shadow: 0 2px 6px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.5);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,.4), 0 24px 60px rgba(0,0,0,.6);
+    --grad: linear-gradient(100deg, #5b8cff 0%, #a78bfa 45%, #f472b6 80%, #ffa45c 100%);
+  }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; margin: 0; }
@@ -147,6 +165,73 @@
     .glow.g3 { background: #be185d; opacity: .16; }
     .glow.g4 { background: #0ea5e9; opacity: .12; }
   }
+
+  [data-theme="dark"] .glow { opacity: .22; filter: blur(100px); }
+  [data-theme="dark"] .glow.g1 { background: #2a3cff; }
+  [data-theme="dark"] .glow.g2 { background: #7c3aed; }
+  [data-theme="dark"] .glow.g3 { background: #be185d; opacity: .16; }
+  [data-theme="dark"] .glow.g4 { background: #0ea5e9; opacity: .12; }
+  /* Per-wallpaper tweaks to the nebula clouds */
+  #backdrop[data-scene="blackhole"] .glow,
+  #backdrop[data-scene="quasar"] .glow { opacity: .05; }
+  #backdrop[data-scene="galaxy"] .glow { opacity: .09; }
+  #backdrop[data-scene="nebula"] .glow { opacity: .5; filter: blur(90px); }
+  #backdrop[data-scene="nebula"] .glow.g1 { background: #4338ca; }
+  #backdrop[data-scene="nebula"] .glow.g2 { background: #c026d3; }
+  #backdrop[data-scene="nebula"] .glow.g3 { background: #e11d48; opacity: .38; }
+  #backdrop[data-scene="nebula"] .glow.g4 { background: #06b6d4; opacity: .35; }
+
+  /* ---------- Wallpaper picker ---------- */
+  .walls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 6px; }
+  .wall {
+    background: none; border: none; padding: 0; cursor: pointer; text-align: center;
+    font-size: 13px; color: var(--text);
+  }
+  .wall .pv {
+    display: block; aspect-ratio: 4 / 3; border-radius: 14px; margin-bottom: 6px;
+    border: 2px solid transparent; outline: 1px solid var(--hairline);
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), border-color .2s;
+  }
+  .wall:hover .pv { transform: scale(1.04); }
+  .wall[aria-pressed="true"] .pv { border-color: var(--accent); outline-color: transparent; }
+  .wall[aria-pressed="true"] { font-weight: 600; }
+  .pv-auto { background: linear-gradient(135deg, #f3f0ff 0 49.5%, #05060d 50.5% 100%); }
+  .pv-starfield {
+    background:
+      radial-gradient(1px 1px at 20% 30%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 70% 20%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 45% 65%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 85% 75%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 12% 80%, #cfe0ff 50%, transparent 51%),
+      radial-gradient(circle at 30% 20%, #1e2a78 0, transparent 60%), #03040a;
+  }
+  .pv-blackhole {
+    background:
+      radial-gradient(circle at 50% 50%, #000 0 17%, #fff2d6 19%, #ffb45e 23%, rgba(255,120,40,.35) 30%, transparent 40%),
+      linear-gradient(transparent 46%, #ffd18a 49%, #ff7a2f 51%, transparent 54%),
+      radial-gradient(circle, rgba(255,150,60,.25), transparent 70%), #040306;
+  }
+  .pv-quasar {
+    background:
+      radial-gradient(circle, #fff 0 4%, #bcd6ff 8%, rgba(110,140,255,.4) 18%, transparent 32%),
+      linear-gradient(70deg, transparent 47%, rgba(140,170,255,.9) 50%, transparent 53%), #03040d;
+  }
+  .pv-galaxy {
+    background:
+      radial-gradient(ellipse 14% 9% at 50% 50%, #fff6dc, transparent),
+      radial-gradient(ellipse 45% 22% at 50% 50%, rgba(170,150,255,.8), rgba(90,120,255,.25) 60%, transparent 75%), #04040b;
+  }
+  .pv-nebula {
+    background:
+      radial-gradient(circle at 30% 40%, #7c3aed, transparent 50%),
+      radial-gradient(circle at 72% 55%, #db2777, transparent 50%),
+      radial-gradient(circle at 50% 85%, #0891b2, transparent 50%), #05050c;
+  }
+
+  /* Keep text legible over bright wallpapers */
+  [data-theme="dark"] .hero h2, [data-theme="dark"] .hero p, [data-theme="dark"] .eyebrow,
+  [data-theme="dark"] .msg.model .bubble { text-shadow: 0 1px 14px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.6); }
+  [data-theme="dark"] .hero h2 .grad { text-shadow: none; }
 
   main {
     position: relative; z-index: 1;
@@ -383,7 +468,10 @@
   .btn.primary:hover { background: var(--accent-hover); }
 
   @media (max-width: 560px) {
-    select { max-width: 140px; font-size: 13px; }
+    header { gap: 2px; padding: 0 10px; }
+    .brand { gap: 6px; }
+    .pill { padding: 6px 8px; }
+    select { max-width: 124px; font-size: 13px; }
     .pill .label { display: none; }
     #messages { padding-top: 24px; }
     .hint { display: none; }
@@ -399,6 +487,9 @@
   <div class="select-wrap"><select id="model" title="Model"></select></div>
   <button class="pill" id="newChat" title="New chat">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="label">New</span>
+  </button>
+  <button class="pill" id="openWalls" title="Wallpaper">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-20 12 12)"/></svg>
   </button>
   <button class="pill" id="openSettings" title="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -428,6 +519,15 @@
   </div>
   <div class="hint">Return to send · Shift + Return for a new line</div>
 </footer>
+
+<dialog id="walls">
+  <form method="dialog">
+    <h2>Wallpaper</h2>
+    <p class="sub">Pick a scene. Space scenes always use dark mode.</p>
+    <div class="walls" id="wallGrid"></div>
+    <div class="actions"><button class="btn primary" value="done">Done</button></div>
+  </form>
+</dialog>
 
 <dialog id="settings">
   <form method="dialog">
@@ -961,63 +1061,81 @@ $("settings").addEventListener("close", async () => {
 });
 
 /* ---------- Animated backdrop ---------- */
-// Dark mode: a slowly drifting, twinkling starfield with the odd shooting star.
-// Light mode: soft glowing motes of light floating upward.
-(function backdrop() {
+const SCENES = {
+  auto:      "Auto",
+  starfield: "Starfield",
+  blackhole: "Black hole",
+  quasar:    "Quasar",
+  galaxy:    "Galaxy",
+  nebula:    "Nebula",
+};
+
+const Backdrop = (function () {
   const canvas = $("sky");
   const ctx = canvas.getContext("2d");
   const darkQ = matchMedia("(prefers-color-scheme: dark)");
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let scene = "auto";
   let w, h, dpr, stars = [], motes = [], meteors = [], nextMeteor = 0;
+  let disk = [], jet = [], galaxy = null;
   let mx = 0, my = 0, px = 0, py = 0;   // pointer parallax, eased
+
+  const isDark = () => document.documentElement.dataset.theme === "dark" || darkQ.matches;
+  const mode = () => scene === "auto" ? (isDark() ? "starfield" : "light") : scene;
+  const TAU = Math.PI * 2;
 
   function resize() {
     dpr = Math.min(devicePixelRatio || 1, 2);
     w = innerWidth; h = innerHeight;
     canvas.width = w * dpr; canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    build();
+  }
+
+  function build() {
     const n = Math.min(450, Math.round(w * h / 3500));
     stars = Array.from({ length: n }, () => {
       const depth = Math.random() ** 2;          // most stars are far away and faint
       return {
         x: Math.random() * w, y: Math.random() * h,
-        r: 0.3 + depth * 1.4,
-        a: 0.35 + depth * 0.65,
-        depth,
-        tw: Math.random() * Math.PI * 2,
-        tws: 0.5 + Math.random() * 2,
+        r: 0.3 + depth * 1.4, a: 0.35 + depth * 0.65, depth,
+        tw: Math.random() * TAU, tws: 0.5 + Math.random() * 2,
         hue: Math.random() < 0.15 ? (Math.random() < 0.5 ? 210 : 30) : 0,
       };
     });
     motes = Array.from({ length: Math.min(60, Math.round(w * h / 22000)) }, () => newMote(true));
+    const m = mode();
+    disk = m === "blackhole" ? makeDisk(Math.min(2800, Math.round(w * h / 420)), 1.55, 3.4)
+         : m === "quasar" ? makeDisk(900, 1.3, 2.2) : [];
+    jet = m === "quasar" ? Array.from({ length: 260 }, () => newJetBit(true)) : [];
+    galaxy = m === "galaxy" ? makeGalaxy() : null;
   }
+
   function newMote(anywhere) {
     const hues = [220, 265, 330, 25];
     return {
-      x: Math.random() * w,
-      y: anywhere ? Math.random() * h : h + 40,
-      r: 2 + Math.random() * 10,
-      vy: 0.08 + Math.random() * 0.25,
-      sway: Math.random() * Math.PI * 2,
-      hue: hues[Math.floor(Math.random() * hues.length)],
+      x: Math.random() * w, y: anywhere ? Math.random() * h : h + 40,
+      r: 2 + Math.random() * 10, vy: 0.08 + Math.random() * 0.25,
+      sway: Math.random() * TAU, hue: hues[Math.floor(Math.random() * hues.length)],
       a: 0.12 + Math.random() * 0.25,
     };
   }
 
-  function drawStars(t, dt) {
-    px += (mx - px) * 0.03; py += (my - py) * 0.03;
+  /* --- Shared starry sky --- */
+  function drawStars(t, dt, { speed = 1, dim = 1, shooting = true } = {}) {
     for (const s of stars) {
-      s.x -= (0.02 + s.depth * 0.12) * dt;       // slow drift, closer stars move faster
+      s.x -= (0.02 + s.depth * 0.12) * dt * speed;
       if (s.x < -2) { s.x = w + 2; s.y = Math.random() * h; }
       const x = s.x + px * s.depth * 18, y = s.y + py * s.depth * 18;
-      const a = s.a * (0.65 + 0.35 * Math.sin(t * 0.001 * s.tws + s.tw));
+      const a = dim * s.a * (0.65 + 0.35 * Math.sin(t * 0.001 * s.tws + s.tw));
       ctx.fillStyle = s.hue ? `hsla(${s.hue}, 80%, 85%, ${a})` : `rgba(255,255,255,${a})`;
-      ctx.beginPath(); ctx.arc(x, y, s.r, 0, 6.283); ctx.fill();
-      if (s.r > 1.4) {                            // soft halo on the brightest stars
+      ctx.beginPath(); ctx.arc(x, y, s.r, 0, TAU); ctx.fill();
+      if (s.r > 1.4) {
         ctx.fillStyle = `rgba(200,220,255,${a * 0.12})`;
-        ctx.beginPath(); ctx.arc(x, y, s.r * 4, 0, 6.283); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, s.r * 4, 0, TAU); ctx.fill();
       }
     }
+    if (!shooting) return;
     if (t > nextMeteor) {
       meteors.push({ x: Math.random() * w * 0.8 + w * 0.2, y: Math.random() * h * 0.4, life: 0, len: 120 + Math.random() * 120 });
       nextMeteor = t + 5000 + Math.random() * 9000;
@@ -1035,6 +1153,7 @@ $("settings").addEventListener("close", async () => {
     }
   }
 
+  /* --- Light mode: floating motes --- */
   function drawMotes(t, dt) {
     for (let i = 0; i < motes.length; i++) {
       const m = motes[i];
@@ -1045,29 +1164,289 @@ $("settings").addEventListener("close", async () => {
       g.addColorStop(0, `hsla(${m.hue}, 100%, 75%, ${m.a})`);
       g.addColorStop(1, `hsla(${m.hue}, 100%, 75%, 0)`);
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(x, m.y, m.r * 3, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, m.y, m.r * 3, 0, TAU); ctx.fill();
     }
   }
 
-  let last = performance.now(), running = true;
+  /* --- Accretion disk particles (radii in units of the hole's radius) --- */
+  function makeDisk(n, inner, spread) {
+    return Array.from({ length: n }, () => {
+      const u = Math.random();
+      return {
+        k: inner + spread * u * u,               // denser toward the inner edge
+        a: Math.random() * TAU,
+        s: 0.6 + Math.random() * 1.6,
+        j: (Math.random() - 0.5) * 0.12,
+        inner, spread,
+      };
+    });
+  }
+  const diskColor = (rn, alpha) => `hsla(${44 - rn * 32}, 100%, ${94 - rn * 50}%, ${alpha})`;
+
+  /* --- Black hole: a Gargantua-style lensed accretion disk --- */
+  // Smooth glowing ring between radii a and b (in px), squashed vertically by `sy`,
+  // limited to the half above (half = -1) or below (half = 1) the centre.
+  function glowRing(cx, cy, a, b, sy, half, stops) {
+    ctx.save();
+    ctx.translate(cx, cy); ctx.scale(1, sy);
+    const g = ctx.createRadialGradient(0, 0, a, 0, 0, b);
+    stops.forEach(([o, c]) => g.addColorStop(o, c));
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    const [s0, s1] = half < 0 ? [Math.PI, TAU] : half > 0 ? [0, Math.PI] : [0, TAU];
+    ctx.arc(0, 0, b, s0, s1); ctx.arc(0, 0, a, s1, s0, true);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  const DISK_STOPS = [
+    [0, "rgba(255,248,232,0.95)"], [0.12, "rgba(255,214,150,0.8)"],
+    [0.35, "rgba(255,150,70,0.45)"], [0.7, "rgba(220,80,30,0.14)"], [1, "rgba(180,50,20,0)"],
+  ];
+  function drawBlackHole(t, dt) {
+    drawStars(t, dt, { speed: 0.4, dim: 0.8, shooting: false });
+    const R = Math.min(w, h) * (w < 600 ? 0.15 : 0.13);
+    const cx = w / 2 + px * 14, cy = h * 0.42 + py * 14;
+    const tilt = 0.13;
+    const flicker = 1 + 0.04 * Math.sin(t * 0.0017);
+
+    // Warm ambient glow
+    let g = ctx.createRadialGradient(cx, cy, R, cx, cy, R * 8);
+    g.addColorStop(0, "rgba(255,170,90,0.22)");
+    g.addColorStop(0.35, "rgba(255,120,50,0.07)");
+    g.addColorStop(1, "rgba(255,100,40,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+
+    ctx.globalCompositeOperation = "lighter";
+    // Far half of the disk (behind the hole)
+    glowRing(cx, cy, R * 1.5, R * 5.2 * flicker, tilt, -1, DISK_STOPS);
+    // Light from the far side, bent up and over the hole: the bright halo
+    glowRing(cx, cy, R * 1.02, R * 1.75, 1, -1, [
+      [0, "rgba(255,246,228,0.95)"], [0.18, "rgba(255,205,140,0.7)"], [0.5, "rgba(255,140,60,0.22)"], [1, "rgba(255,110,40,0)"],
+    ]);
+    // ...and the fainter image wrapping underneath
+    glowRing(cx, cy, R * 1.01, R * 1.4, 1, 1, [
+      [0, "rgba(255,240,215,0.8)"], [0.25, "rgba(255,180,110,0.35)"], [1, "rgba(255,120,50,0)"],
+    ]);
+
+    // Orbiting sparks give the disk motion; the left side is brighter (Doppler beaming)
+    const front = [];
+    for (const p of disk) {
+      p.a += dt * 0.01 * (1.55 / p.k) ** 1.5;
+      const c = Math.cos(p.a), sn = Math.sin(p.a);
+      const rn = (p.k - p.inner) / p.spread;
+      const alpha = (1 - rn * 0.8) * (0.45 + 0.55 * -c) * 0.45;
+      const r = p.k * R;
+      const x = cx + c * r, y = cy + (sn + p.j) * r * tilt;
+      const col = diskColor(rn, alpha);
+      if (sn < 0) {
+        ctx.fillStyle = col; ctx.fillRect(x, y, p.s, p.s);
+        const rr = R * (1.05 + rn * 0.5);
+        ctx.fillStyle = diskColor(rn, alpha * 0.8);
+        ctx.fillRect(cx + c * rr, cy - Math.abs(sn) * rr, p.s, p.s);
+      } else {
+        front.push(x, y, p.s, col);
+      }
+    }
+    ctx.globalCompositeOperation = "source-over";
+
+    // Photon ring, then the shadow itself
+    ctx.shadowColor = "rgba(255,215,160,1)"; ctx.shadowBlur = 24;
+    ctx.strokeStyle = "rgba(255,244,225,0.95)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.015, 0, TAU); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#000";
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+
+    // Near half of the disk crosses in front of the shadow
+    ctx.globalCompositeOperation = "lighter";
+    glowRing(cx, cy, R * 1.5, R * 5.2 * flicker, tilt, 1, DISK_STOPS);
+    // Thin, hot inner band across the middle
+    glowRing(cx, cy, R * 1.45, R * 2.3, tilt * 0.9, 1, [
+      [0, "rgba(255,252,240,0.55)"], [0.4, "rgba(255,220,160,0.18)"], [1, "rgba(255,180,100,0)"],
+    ]);
+    for (let i = 0; i < front.length; i += 4) {
+      ctx.fillStyle = front[i + 3];
+      ctx.fillRect(front[i], front[i + 1], front[i + 2], front[i + 2]);
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  /* --- Quasar: blazing core with twin relativistic jets --- */
+  function newJetBit(anywhere) {
+    return {
+      d: anywhere ? Math.random() : 0,
+      v: 0.004 + Math.random() * 0.006,
+      off: (Math.random() - 0.5) * 2,
+      dir: Math.random() < 0.5 ? 1 : -1,
+      s: 1 + Math.random() * 1.8,
+    };
+  }
+  function drawQuasar(t, dt) {
+    drawStars(t, dt, { speed: 0.4, dim: 0.8, shooting: false });
+    const S = Math.min(w, h);
+    const cx = w / 2 + px * 12, cy = h * 0.45 + py * 12;
+    const ang = -0.38 + Math.sin(t * 0.00012) * 0.07;           // jets slowly precess
+    const ux = Math.sin(ang), uy = -Math.cos(ang), nx = -uy, ny = ux;
+    const L = Math.hypot(w, h) * 0.6;
+
+    ctx.globalCompositeOperation = "lighter";
+    for (const dir of [1, -1]) {
+      const ex = cx + ux * L * dir, ey = cy + uy * L * dir, we = L * 0.06;
+      const g = ctx.createLinearGradient(cx, cy, ex, ey);
+      g.addColorStop(0, "rgba(190,215,255,0.55)");
+      g.addColorStop(0.25, "rgba(120,140,255,0.22)");
+      g.addColorStop(1, "rgba(150,90,255,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(cx + nx * 3, cy + ny * 3);
+      ctx.lineTo(ex + nx * we, ey + ny * we);
+      ctx.lineTo(ex - nx * we, ey - ny * we);
+      ctx.lineTo(cx - nx * 3, cy - ny * 3);
+      ctx.fill();
+    }
+    for (let i = 0; i < jet.length; i++) {
+      const b = jet[i];
+      b.d += b.v * dt;
+      if (b.d > 1) { jet[i] = newJetBit(false); continue; }
+      const dist = b.d * L, spread = b.off * dist * 0.05;
+      const x = cx + ux * dist * b.dir + nx * spread, y = cy + uy * dist * b.dir + ny * spread;
+      ctx.fillStyle = `hsla(${215 + b.d * 50}, 100%, ${85 - b.d * 20}%, ${(1 - b.d) * 0.85})`;
+      ctx.fillRect(x, y, b.s, b.s);
+    }
+
+    // Small, fast disk perpendicular to the jets
+    const R = S * 0.05;
+    for (const p of disk) {
+      p.a += dt * 0.03 * (1.3 / p.k) ** 1.5;
+      const rn = (p.k - p.inner) / p.spread;
+      const lx = Math.cos(p.a) * p.k * R, ly = (Math.sin(p.a) + p.j) * p.k * R * 0.22;
+      ctx.fillStyle = diskColor(rn, (1 - rn * 0.7) * 0.6);
+      ctx.fillRect(cx + lx * nx + ly * ux, cy + lx * ny + ly * uy, p.s, p.s);
+    }
+
+    // Core glow and diffraction spikes
+    const pulse = 1 + 0.07 * Math.sin(t * 0.0025) + 0.03 * Math.sin(t * 0.0071);
+    const cr = S * 0.16 * pulse;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr);
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.07, "rgba(215,230,255,0.95)");
+    g.addColorStop(0.25, "rgba(130,160,255,0.3)");
+    g.addColorStop(1, "rgba(100,120,255,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy, cr, 0, TAU); ctx.fill();
+    ctx.strokeStyle = "rgba(220,235,255,0.35)"; ctx.lineWidth = 1;
+    for (const a of [0, Math.PI / 2]) {
+      const sx = Math.cos(a) * cr * 1.6, sy = Math.sin(a) * cr * 1.6;
+      ctx.beginPath(); ctx.moveTo(cx - sx, cy - sy); ctx.lineTo(cx + sx, cy + sy); ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  /* --- Galaxy: a two-armed spiral, pre-rendered once and slowly rotated --- */
+  function makeGalaxy() {
+    const S = Math.round(Math.min(Math.max(w, h) * 0.8, 1200) * dpr);
+    const off = document.createElement("canvas");
+    off.width = off.height = S;
+    const o = off.getContext("2d"), c = S / 2;
+    o.globalCompositeOperation = "lighter";
+    const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+    for (let i = 0; i < 16000; i++) {
+      const arm = i % 2, u = Math.random();
+      const r = (0.03 + 0.9 * u ** 1.1) * c;
+      const th = arm * Math.PI + (r / c) * 4.2 + gauss() * 0.5;
+      const x = c + Math.cos(th) * r + gauss() * c * 0.06, y = c + Math.sin(th) * r + gauss() * c * 0.06;
+      const rn = r / c, pink = Math.random() < 0.035;
+      o.fillStyle = pink ? "hsla(330, 90%, 72%, 0.7)"
+        : rn < 0.2 ? `hsla(40, 90%, 85%, ${0.5 - rn})` : `hsla(${215 + Math.random() * 30}, 85%, 85%, ${0.15 + Math.random() * 0.35})`;
+      const sz = (0.6 + Math.random() * 1.4) * dpr;
+      o.fillRect(x, y, sz, sz);
+    }
+    // Soft glow under the arms: a blurred copy of the stars drawn so far
+    const tmp = document.createElement("canvas");
+    tmp.width = tmp.height = S;
+    tmp.getContext("2d").drawImage(off, 0, 0);
+    o.filter = `blur(${Math.round(S / 90)}px)`;
+    o.drawImage(tmp, 0, 0); o.drawImage(tmp, 0, 0);
+    o.filter = "none";
+    for (let i = 0; i < 2500; i++) {             // diffuse halo of stars
+      const r = Math.abs(gauss()) * c * 0.7, th = Math.random() * TAU;
+      o.fillStyle = `rgba(255,240,220,${0.08 + Math.random() * 0.15})`;
+      o.fillRect(c + Math.cos(th) * r, c + Math.sin(th) * r, dpr, dpr);
+    }
+    const g = o.createRadialGradient(c, c, 0, c, c, c * 0.35);
+    g.addColorStop(0, "rgba(255,245,215,0.95)");
+    g.addColorStop(0.25, "rgba(255,205,150,0.35)");
+    g.addColorStop(1, "rgba(255,180,120,0)");
+    o.fillStyle = g;
+    o.beginPath(); o.arc(c, c, c * 0.35, 0, TAU); o.fill();
+    return off;
+  }
+  function drawGalaxy(t, dt) {
+    drawStars(t, dt, { speed: 0.3, dim: 0.7, shooting: false });
+    if (!galaxy) galaxy = makeGalaxy();
+    const S = galaxy.width / dpr;
+    ctx.save();
+    ctx.translate(w / 2 + px * 16, h * 0.45 + py * 16);
+    ctx.rotate(-0.35);
+    ctx.scale(1, 0.48);
+    ctx.rotate(t * 0.00004);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.drawImage(galaxy, -S / 2, -S / 2, S, S);
+    ctx.restore();
+  }
+
+  let last = performance.now(), running = true, looping = false;
   function frame(t) {
-    const dt = Math.min(t - last, 50) / 16.7;    // ~1 at 60fps; clamp after tab switches
+    const dt = still ? 0 : Math.min(t - last, 50) / 16.7;   // ~1 at 60fps; clamp after tab switches
     last = t;
+    px += (mx - px) * 0.03; py += (my - py) * 0.03;
     ctx.clearRect(0, 0, w, h);
-    darkQ.matches ? drawStars(t, still ? 0 : dt) : drawMotes(t, still ? 0 : dt);
-    if (running && !still) requestAnimationFrame(frame);
+    switch (mode()) {
+      case "light":     drawMotes(t, dt); break;
+      case "blackhole": drawBlackHole(t, dt); break;
+      case "quasar":    drawQuasar(t, dt); break;
+      case "galaxy":    drawGalaxy(t, dt); break;
+      default:          drawStars(t, dt);          // starfield + nebula
+    }
+    if (running && !still) requestAnimationFrame(frame); else looping = false;
+  }
+  function kick() {
+    if (still) { frame(performance.now()); return; }
+    if (!looping && running) { looping = true; last = performance.now(); requestAnimationFrame(frame); }
+  }
+
+  function setScene(id) {
+    scene = SCENES[id] ? id : "auto";
+    if (scene === "auto") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = "dark";   // space scenes always use dark mode
+    $("backdrop").dataset.scene = mode();
+    build();
+    kick();
   }
 
   addEventListener("resize", () => { resize(); if (still) frame(last); });
   addEventListener("pointermove", (e) => { mx = e.clientX / w - 0.5; my = e.clientY / h - 0.5; });
-  darkQ.addEventListener("change", () => { if (still) frame(last); });
-  document.addEventListener("visibilitychange", () => {
-    running = !document.hidden;
-    if (running && !still) { last = performance.now(); requestAnimationFrame(frame); }
-  });
+  darkQ.addEventListener("change", () => { $("backdrop").dataset.scene = mode(); build(); if (still) frame(last); });
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; kick(); });
   resize();
-  requestAnimationFrame(frame);
+  return { setScene };
 })();
+
+/* ---------- Wallpaper picker ---------- */
+settings.wallpaper ??= "auto";
+function renderWalls() {
+  $("wallGrid").innerHTML = Object.entries(SCENES).map(([id, name]) =>
+    `<button type="button" class="wall" data-id="${id}" aria-pressed="${settings.wallpaper === id}">
+       <span class="pv pv-${id}"></span>${name}</button>`).join("");
+  $("wallGrid").querySelectorAll(".wall").forEach(b => b.onclick = () => {
+    settings.wallpaper = b.dataset.id;
+    store.set("gc.settings", settings);
+    Backdrop.setScene(settings.wallpaper);
+    renderWalls();
+  });
+}
+$("openWalls").onclick = () => { renderWalls(); $("walls").showModal(); };
+Backdrop.setScene(settings.wallpaper);
 
 /* ---------- Boot ---------- */
 setBusy(false);
