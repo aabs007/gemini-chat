@@ -9,7 +9,8 @@ fast open models (like Llama) through Groq and Mistral's own models. It's a sing
 - Choose the newest Gemini and Gemma models (the list loads automatically)
 - Optional: add a free Groq key for fast open models like Llama
 - Optional: add a free Mistral key for Mistral's models
-- Attach or paste images
+- Attach or paste images and PDFs
+- Animated background: a starfield in dark mode, drifting light in light mode
 - Markdown and code blocks, with copy buttons
 - Optional system instructions and temperature setting
 - Light and dark mode, and it works on phones
