@@ -7,6 +7,12 @@
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <title>Prism</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prism">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
@@ -841,6 +847,11 @@
     <input class="field" id="presetName" placeholder="Name, e.g. Chef" autocomplete="off">
     <textarea id="presetPrompt" placeholder="Instructions, e.g. You are a friendly chef who suggests quick, simple recipes."></textarea>
     <div style="margin-top:8px"><button type="button" class="btn" id="addPreset">Add persona</button></div>
+    <div id="installBox">
+      <label>Install app</label>
+      <button type="button" class="btn primary" id="installBtn" hidden>Install Prism</button>
+      <small id="installHint"></small>
+    </div>
     <div class="actions">
       <button class="btn" value="cancel" formnovalidate>Cancel</button>
       <button class="btn primary" value="save">Save</button>
@@ -1999,6 +2010,30 @@ $("addPreset").onclick = () => {
 };
 $("soundsToggle").onchange = (e) => { settings.sounds = e.target.checked; store.set("gc.settings", settings); if (settings.sounds) Sound.done(); };
 
+/* ---------- Install as an app ---------- */
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+let installPrompt = null;
+addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; syncInstall(); });
+addEventListener("appinstalled", () => { installPrompt = null; syncInstall(); });
+function syncInstall() {
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  $("installBtn").hidden = !installPrompt || standalone;
+  $("installHint").textContent = standalone ? "Prism is installed and running as an app."
+    : installPrompt ? "Adds Prism to your home screen or dock, opening in its own window."
+    : ios ? "On iPhone or iPad: tap the Share button in Safari, then “Add to Home Screen”."
+    : "In Chrome or Edge, use the install icon in the address bar. In Safari on Mac, choose File › Add to Dock.";
+}
+$("installBtn").onclick = async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice.catch(() => {});
+  installPrompt = null;
+  syncInstall();
+};
+
 /* ---------- Settings ---------- */
 function openSettings() {
   document.querySelectorAll(".keyfield").forEach(f => {
@@ -2013,6 +2048,7 @@ function openSettings() {
   $("tempVal").textContent = settings.temperature;
   $("soundsToggle").checked = settings.sounds;
   renderPresets();
+  syncInstall();
   $("settings").showModal();
 }
 document.querySelectorAll(".keyfield").forEach(f => {
