@@ -288,6 +288,130 @@
   .side-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 30px 10px; }
   .side-note { color: var(--muted); font-size: 12px; text-align: center; padding-top: 8px; letter-spacing: 0; }
 
+  [hidden] { display: none !important; }
+
+  /* ---------- Message actions ---------- */
+  .msg.user .col { display: flex; flex-direction: column; align-items: flex-end; max-width: 80%; min-width: 0; }
+  .msg.user .col .bubble { max-width: 100%; }
+  .acts {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 2px; margin-top: 6px;
+    opacity: 0; transition: opacity .2s;
+  }
+  .msg:hover .acts, .msg:last-child .acts, .acts:focus-within { opacity: 1; }
+  @media (hover: none) { .acts { opacity: 1; } }
+  .act {
+    display: inline-flex; align-items: center; gap: 5px;
+    border: none; background: none; color: var(--muted);
+    font-size: 12.5px; padding: 4px 8px; border-radius: 8px; cursor: pointer; letter-spacing: 0;
+  }
+  .act svg { width: 14px; height: 14px; }
+  .act:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .mlabel { font-size: 12px; color: var(--muted); margin-right: 6px; letter-spacing: 0; opacity: .8; }
+  .errtxt { color: var(--danger); }
+  .editbox { width: min(600px, 86vw); }
+  .editbox textarea {
+    width: 100%; min-height: 90px; background: var(--panel); color: var(--text);
+    border: 1px solid var(--accent); border-radius: 18px; padding: 12px 16px; outline: none; resize: vertical;
+  }
+  .editbox .row2 { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+
+  /* Generated images and web sources */
+  .gen { display: grid; gap: 12px; margin-top: 10px; }
+  .gen figure { margin: 0; position: relative; }
+  .gen img { max-width: min(100%, 560px); border-radius: 18px; display: block; box-shadow: var(--shadow); }
+  .gen .dl {
+    position: absolute; top: 10px; left: 10px; font-size: 12.5px; padding: 5px 12px;
+    border-radius: 980px; text-decoration: none; color: var(--text);
+    background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--hairline);
+  }
+  .missing { font-size: 13px; color: var(--muted); margin: 4px 0; }
+  .sources { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; }
+  .src-h { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 2px; letter-spacing: 0; }
+  .src {
+    font-size: 12.5px; padding: 4px 11px; border-radius: 980px; text-decoration: none; color: var(--text);
+    background: var(--glass); border: 1px solid var(--hairline);
+    max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0;
+  }
+  .src:hover { border-color: var(--accent); }
+
+  /* Side-by-side comparison */
+  .cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .cmp-col {
+    min-width: 0; padding: 14px 16px; border-radius: 18px;
+    background: var(--glass); border: 1px solid var(--hairline);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  }
+  .cmp-col.picked { border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+  .cmp-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 8px; letter-spacing: 0;
+  }
+  .cmp-head .act { padding: 2px 8px; }
+  .cmp-col .body > :first-child { margin-top: 0; }
+  .cmp-col .body > :last-child { margin-bottom: 0; }
+  .cmp-list { max-height: 50vh; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
+  .cmp-list .grp { padding-left: 2px; }
+  dialog .cmp-list label {
+    display: flex; justify-content: flex-start; align-items: center; gap: 10px;
+    font-weight: 400; font-size: 15px; margin: 0; padding: 7px 2px; cursor: pointer;
+  }
+  .cmp-list input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  /* Composer tools */
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 4px 2px 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    border: 1px solid var(--hairline); background: transparent; color: var(--muted);
+    border-radius: 980px; padding: 4px 11px; font-size: 13px; cursor: pointer; letter-spacing: 0;
+    transition: background .2s, color .2s, border-color .2s;
+  }
+  .chip:hover { color: var(--text); }
+  .chip[aria-pressed="true"] {
+    color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .chip:disabled { opacity: .4; cursor: default; }
+  .chip svg { width: 14px; height: 14px; flex: none; }
+  .selchip { position: relative; }
+  .selchip select {
+    appearance: none; -webkit-appearance: none; border: none; background: transparent; color: inherit;
+    font-size: 13px; padding: 0; max-width: 130px; cursor: pointer; outline: none;
+  }
+  .selchip:focus-within { border-color: var(--accent); }
+  #micBtn { background: transparent; color: var(--muted); }
+  #micBtn:hover { background: var(--bg-alt); color: var(--text); }
+  #micBtn.rec { background: #ff3b30; color: #fff; animation: rec 1.3s ease-out infinite; }
+  @keyframes rec { from { box-shadow: 0 0 0 0 rgba(255,59,48,.55); } to { box-shadow: 0 0 0 14px rgba(255,59,48,0); } }
+
+  /* Settings extras */
+  dialog .field {
+    width: 100%; background: var(--bg-alt); border: 1px solid transparent;
+    border-radius: 12px; padding: 11px 14px; outline: none; font-size: 15px; margin-bottom: 8px;
+  }
+  dialog .field:focus { border-color: var(--accent); }
+  .switch-row { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; font-size: 14px; font-weight: 600; }
+  input.switch {
+    appearance: none; -webkit-appearance: none; flex: none;
+    width: 46px; height: 28px; border-radius: 14px; margin: 0;
+    background: color-mix(in srgb, var(--text) 18%, transparent); position: relative; cursor: pointer;
+    transition: background .25s;
+  }
+  input.switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .25s cubic-bezier(.2,.8,.2,1);
+  }
+  input.switch:checked { background: #34c759; }
+  input.switch:checked::after { transform: translateX(18px); }
+  .preset-row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 6px;
+    background: var(--bg-alt); border-radius: 12px; font-size: 14px;
+  }
+  .preset-row b { font-weight: 600; flex: none; }
+  .preset-row span { flex: 1; min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .preset-row button { flex: none; border: none; background: none; color: var(--muted); cursor: pointer; font-size: 14px; }
+  .preset-row button:hover { color: var(--danger); }
+
   main {
     position: relative; z-index: 1;
     flex: 1; overflow-y: auto;
@@ -296,7 +420,7 @@
   }
   #messages {
     max-width: 760px; margin: 0 auto;
-    padding: 40px 20px 180px;
+    padding: 40px 20px 220px;
   }
 
   .hero { text-align: center; padding: 11vh 0 0; animation: rise .9s cubic-bezier(.2,.8,.2,1) both; }
@@ -608,7 +732,16 @@
       </button>
       <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf" multiple hidden>
       <textarea id="input" rows="1" placeholder="Ask anything"></textarea>
+      <button class="round" id="micBtn" title="Speak your message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
       <button class="round shimmer" id="send" title="Send"></button>
+    </div>
+    <div class="tools">
+      <button type="button" class="chip" id="searchChip" aria-pressed="false" title="Let Gemini search the web and show sources"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search</span></button>
+      <button type="button" class="chip" id="imageChip" aria-pressed="false" title="Create an image with Gemini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span>Image</span></button>
+      <button type="button" class="chip" id="compareChip" aria-pressed="false" title="Ask several models at once"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7.5" height="16" rx="2"/><rect x="13.5" y="4" width="7.5" height="16" rx="2"/></svg><span>Compare</span></button>
+      <label class="chip selchip" title="Persona"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg><select id="presetSel" aria-label="Persona"></select></label>
     </div>
   </div>
   <div class="hint">Return to send · Shift + Return for a new line</div>
@@ -620,6 +753,18 @@
     <p class="sub">Pick a scene. Space scenes always use dark mode.</p>
     <div class="walls" id="wallGrid"></div>
     <div class="actions"><button class="btn primary" value="done">Done</button></div>
+  </form>
+</dialog>
+
+<dialog id="compareDlg">
+  <form method="dialog">
+    <h2>Compare models</h2>
+    <p class="sub">Send each message to up to 3 models at once and see their answers side by side.</p>
+    <div class="cmp-list" id="cmpList"></div>
+    <div class="actions">
+      <button class="btn" value="off">Turn off</button>
+      <button class="btn primary" value="on">Compare</button>
+    </div>
   </form>
 </dialog>
 
@@ -640,6 +785,12 @@
     <textarea id="systemPrompt" placeholder="e.g. You are a concise, friendly assistant."></textarea>
     <label for="temperature">Creativity <span id="tempVal"></span></label>
     <input id="temperature" type="range" min="0" max="2" step="0.1">
+    <div class="switch-row"><span>Sounds</span><input type="checkbox" class="switch" id="soundsToggle" aria-label="Sounds"></div>
+    <label>Your personas <span>In the persona menu</span></label>
+    <div id="presetList"></div>
+    <input class="field" id="presetName" placeholder="Name, e.g. Chef" autocomplete="off">
+    <textarea id="presetPrompt" placeholder="Instructions, e.g. You are a friendly chef who suggests quick, simple recipes."></textarea>
+    <div style="margin-top:8px"><button type="button" class="btn" id="addPreset">Add persona</button></div>
     <div class="actions">
       <button class="btn" value="cancel" formnovalidate>Cancel</button>
       <button class="btn primary" value="save">Save</button>
@@ -687,7 +838,26 @@ const SUGGESTIONS = [
   { ic: "🗺️", t: "Plan", d: "a 3-day trip to Tokyo", p: "Plan a 3-day trip to Tokyo for a first-time visitor." },
 ];
 
+const PRESETS = [
+  { id: "default", name: "Default", prompt: "" },
+  { id: "tutor", name: "Tutor", prompt: "You are a patient tutor. Explain step by step with simple examples, check the learner's understanding, and encourage them." },
+  { id: "coder", name: "Code helper", prompt: "You are an expert programmer. Give correct, working code with short explanations, and follow modern best practices." },
+  { id: "writer", name: "Writer", prompt: "You are a skilled writer and editor. Write clearly and vividly, and match the tone the user asks for." },
+  { id: "translator", name: "Translator", prompt: "You are a translator. Translate the user's message into English, or into the language they ask for if they name one. Reply with only the translation." },
+  { id: "concise", name: "Concise", prompt: "Answer as briefly as possible while staying accurate. Use short sentences or bullet points." },
+];
+const TYPING = `<span class="typing"><i></i><i></i><i></i></span>`;
+const ICONS = {
+  copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`,
+  edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>`,
+  retry: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>`,
+  speak: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>`,
+  stop: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>`,
+};
+
 const $ = (id) => document.getElementById(id);
+function el(tag, cls) { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
@@ -701,7 +871,7 @@ if (!chats) {                                 // first run: bring over the singl
   chats = old.length ? [{ id: uid(), title: titleFor(old), updated: Date.now(), messages: old }] : [];
 }
 let currentId = store.get("gc.current", chats[0]?.id ?? null);
-let history = chats.find(c => c.id === currentId)?.messages.slice() ?? [];   // [{role:'user'|'model', parts:[...]}]
+let history = structuredClone(chats.find(c => c.id === currentId)?.messages ?? []);   // [{role:'user'|'model', parts:[...]}]
 if (!history.length) currentId = null;
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function titleFor(msgs) {
@@ -711,9 +881,15 @@ function titleFor(msgs) {
 }
 settings.groqKey ??= "";
 settings.mistralKey ??= "";
+settings.sounds ??= true;
+settings.preset ??= "default";
+settings.customPresets ??= [];
 const providerOf = (model) => PROVIDERS[model.split(":")[0]] && model.split(":")[0];
 const keyFor = (model) => providerOf(model) ? settings[PROVIDERS[providerOf(model)].key] : settings.apiKey;
-let pending = [];                             // images waiting to send
+let pending = [];                             // images and PDFs waiting to send
+let imageModels = [];                         // Gemini models that can create images
+const mode = { search: false, image: false, compare: false };   // composer toggles
+let compareModels = store.get("gc.compare", []);
 let controller = null;
 
 marked.setOptions({ breaks: true, gfm: true });
@@ -733,7 +909,8 @@ async function loadModels() {
           .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
           .map(m => m.name.replace("models/", ""))
           .filter(n => !/embedding|tts|image-generation|live|audio/.test(n));
-        const latest = latestOnly(list.filter(n => n.startsWith("gemini")));
+        imageModels = list.filter(n => /^gemini.*image/.test(n));
+        const latest = latestOnly(list.filter(n => n.startsWith("gemini") && !/image/.test(n)));
         if (latest.length) names = latest;
         gemma = latestGemma(list.filter(n => n.startsWith("gemma")));
       }
@@ -753,6 +930,7 @@ async function loadModels() {
       || names.find(n => /flash$/.test(n)) || names[0];
   sel.value = preferred;
   settings.model = preferred;
+  syncTools();
 }
 
 // Chat models from an extra provider (only when its key is set).
@@ -799,14 +977,14 @@ function latestOnly(list) {
     .sort((a, b) => (order[a.tier] ?? 9) - (order[b.tier] ?? 9) || b.stable - a.stable || a.name.localeCompare(b.name))
     .map(p => p.name);
 }
-$("model").onchange =(e) => { settings.model = e.target.value; store.set("gc.settings", settings); };
+$("model").onchange = (e) => { settings.model = e.target.value; store.set("gc.settings", settings); syncTools(); };
 
 /* ---------- Rendering ---------- */
 function renderAll() {
   const box = $("messages");
   box.innerHTML = "";
   if (!history.length) { renderHero(); return; }
-  for (const m of history) addBubble(m);
+  history.forEach((m, i) => addBubble(m, i));
   scrollDown();
 }
 
@@ -833,35 +1011,163 @@ function renderHero() {
   $("heroSetup")?.addEventListener("click", openSettings);
 }
 
-function addBubble(m, extraClass = "") {
-  const wrap = document.createElement("div");
-  wrap.className = `msg ${m.role} ${extraClass}`;
-  const b = document.createElement("div");
-  b.className = "bubble";
+const textOf = (m) => m.parts.filter(p => p.text).map(p => p.text).join("");
+const userText = (m) => m.parts.filter(p => p.text).map(p => p.text).join("\n");
+const label = (model) => model.replace(/^\w+:/, "");
+
+// Draw one message. `i` is its index in `history`; without it no action buttons are shown.
+function addBubble(m, i) {
+  const wrap = el("div", `msg ${m.role}`);
   if (m.role === "user") {
+    const col = el("div", "col"), b = el("div", "bubble");
     for (const p of m.parts) {
       if (p.fileName) {
-        const chip = document.createElement("div");
-        chip.className = "filechip";
+        const chip = el("div", "filechip");
         chip.innerHTML = `<span class="ic">📄</span><span class="nm"></span>`;
         chip.querySelector(".nm").textContent = p.fileName;
         b.appendChild(chip);
       } else if (p.inlineData) {
-        const img = document.createElement("img");
-        img.className = "thumb";
+        const img = el("img", "thumb");
         img.src = `data:${p.inlineData.mimeType};base64,${p.inlineData.data}`;
         b.appendChild(img);
+      } else if (p.ref) {
+        b.insertAdjacentHTML("beforeend", `<div class="missing">🖼 Image no longer available</div>`);
       }
     }
-    const text = m.parts.filter(p => p.text).map(p => p.text).join("\n");
+    const text = userText(m);
     if (text) b.appendChild(document.createTextNode(text));
+    col.appendChild(b);
+    if (i != null) col.appendChild(actions([
+      ["edit", "Edit", () => startEdit(i, wrap)],
+      ["copy", "Copy", (btn) => copyText(text, btn)],
+    ]));
+    wrap.appendChild(col);
   } else {
-    b.innerHTML = render(m.parts.map(p => p.text || "").join(""));
+    const b = el("div", "bubble");
+    if (m.compare) {
+      b.appendChild(renderCompare(m, i));
+    } else {
+      const body = el("div", "body");
+      body.innerHTML = render(textOf(m));
+      b.appendChild(body);
+      addMedia(b, m);
+    }
+    if (i != null) {
+      const acts = [["copy", "Copy", (btn) => copyText(textOf(m), btn)]];
+      if ("speechSynthesis" in window) acts.push(["speak", "Listen", (btn) => speak(b, btn)]);
+      if (i === history.length - 1) acts.push(["retry", "Retry", () => retry(i)]);
+      b.appendChild(actions(acts, m.compare ? null : m.model && label(m.model)));
+    }
+    wrap.appendChild(b);
     decorateCode(b);
   }
-  wrap.appendChild(b);
   $("messages").appendChild(wrap);
-  return b;
+  return wrap;
+}
+
+function actions(list, tag) {
+  const row = el("div", "acts");
+  if (tag) row.insertAdjacentHTML("beforeend", `<span class="mlabel">${esc(tag)}</span>`);
+  for (const [icon, name, fn] of list) {
+    const btn = el("button", "act");
+    btn.type = "button"; btn.title = name;
+    btn.innerHTML = `${ICONS[icon]}<span>${name}</span>`;
+    btn.onclick = () => fn(btn);
+    row.appendChild(btn);
+  }
+  return row;
+}
+
+async function copyText(text, btn) {
+  try { await navigator.clipboard.writeText(text); } catch {}
+  const s = btn.querySelector("span"), old = s.textContent;
+  s.textContent = "Copied";
+  setTimeout(() => (s.textContent = old), 1200);
+}
+
+// Generated images, plus the web pages a searched answer was based on
+function addMedia(b, m) {
+  const imgs = m.parts.filter(p => p.inlineData);
+  if (imgs.length) {
+    const g = el("div", "gen");
+    imgs.forEach((p, k) => {
+      const src = `data:${p.inlineData.mimeType};base64,${p.inlineData.data}`;
+      const ext = (p.inlineData.mimeType.split("/")[1] || "png").replace("jpeg", "jpg");
+      g.insertAdjacentHTML("beforeend",
+        `<figure><img src="${src}" alt="Generated image"><a class="dl" href="${src}" download="prism-image-${k + 1}.${ext}">Download</a></figure>`);
+    });
+    b.appendChild(g);
+  }
+  if (m.parts.some(p => p.ref && !p.inlineData)) b.insertAdjacentHTML("beforeend", `<div class="missing">🖼 Image no longer available</div>`);
+  const srcs = (m.sources || []).filter(x => /^https?:/.test(x.uri));
+  if (srcs.length) {
+    const box = el("div", "sources");
+    box.innerHTML = `<span class="src-h">Sources</span>` + srcs.map(x =>
+      `<a class="src" href="${esc(x.uri)}" target="_blank" rel="noopener" title="${esc(x.title)}">${esc(x.title)}</a>`).join("");
+    b.appendChild(box);
+  }
+}
+
+function renderCompare(m, i) {
+  const grid = el("div", "cmp");
+  m.compare.forEach((c, k) => {
+    const col = el("div", `cmp-col${k === m.pick ? " picked" : ""}`);
+    const head = el("div", "cmp-head");
+    head.innerHTML = `<span>${esc(label(c.model))}</span>`;
+    if (m.compare.length > 1 && !c.error) {
+      const btn = el("button", "act");
+      btn.type = "button";
+      btn.innerHTML = k === m.pick ? `${ICONS.check}<span>Keeping</span>` : `<span>Keep this</span>`;
+      btn.title = "Continue the chat with this answer";
+      btn.onclick = () => {
+        m.pick = k; m.parts = [{ text: c.text }];
+        saveHistory(); renderAll();
+      };
+      head.appendChild(btn);
+    }
+    const body = el("div", "body");
+    body.innerHTML = c.error ? `<span class="errtxt">${esc(c.error)}</span>` : render(c.text);
+    col.append(head, body);
+    grid.appendChild(col);
+  });
+  return grid;
+}
+
+// Swap a sent message for an editor; saving drops everything after it and asks again.
+function startEdit(i, wrap) {
+  if (controller) return;
+  const m = history[i];
+  const box = el("div", "editbox");
+  box.innerHTML = `<textarea></textarea><div class="row2"><button type="button" class="btn">Cancel</button><button type="button" class="btn primary">Send</button></div>`;
+  const ta = box.querySelector("textarea");
+  const [cancel, save] = box.querySelectorAll("button");
+  ta.value = userText(m);
+  cancel.onclick = () => renderAll();
+  save.onclick = async () => {
+    const t = ta.value.trim();
+    const media = m.parts.filter(p => !p.text);
+    if (!t && !media.length) return;
+    history = history.slice(0, i);
+    history.push({ role: "user", parts: [...media, ...(t ? [{ text: t }] : [])] });
+    Sound.send();
+    await respond();
+  };
+  ta.onkeydown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); save.click(); }
+    if (e.key === "Escape") cancel.click();
+  };
+  wrap.replaceChildren(box);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+// Ask again for the last reply, with the same model(s) that wrote it.
+async function retry(i) {
+  if (controller) return;
+  const m = history[i];
+  const targets = m.compare ? m.compare.map(c => c.model) : [m.model || settings.model];
+  history = history.slice(0, i);
+  await respond(targets);
 }
 
 function decorateCode(el) {
@@ -888,7 +1194,7 @@ async function send() {
   const text = $("input").value.trim();
   if (!text && !pending.length) return;
   if (pending.some(p => p.text === null)) return;   // a PDF is still being read
-  if (!keyFor(settings.model)) { openSettings(); return; }
+  if (currentTargets().some(m => !keyFor(m))) { openSettings(); return; }
 
   const parts = [
     ...pending.map(p => p.name
@@ -896,33 +1202,145 @@ async function send() {
       : { inlineData: { mimeType: p.mimeType, data: p.data } }),
     ...(text ? [{ text }] : []),
   ];
-  const userMsg = { role: "user", parts };
-  if (!history.length) $("messages").innerHTML = "";
-  const hist = history;                       // stay with this chat even if the user switches away
-  hist.push(userMsg);
-  addBubble(userMsg);
+  history.push({ role: "user", parts });
   $("input").value = ""; autosize();
   pending = []; renderAttachments();
+  Sound.send();
+  await respond();
+}
+
+// Which model(s) should answer the next message
+function currentTargets() {
+  if (mode.image) return [imageModel()];
+  const valid = compareModels.filter(m => [...$("model").options].some(o => o.value === m));
+  return mode.compare && valid.length > 1 ? valid : [settings.model];
+}
+function imageModel() {
+  const ver = (n) => parseFloat(n.match(/\d+(\.\d+)?/)?.[0] || 0);
+  return [...imageModels].sort((a, b) => ver(b) - ver(a) || a.includes("preview") - b.includes("preview"))[0]
+    || "gemini-2.5-flash-image";
+}
+const isImageModel = (model) => !providerOf(model) && /image/.test(model);
+
+// Get the reply to the conversation as it stands (its last message is the user's).
+async function respond(targets = currentTargets()) {
+  if (targets.some(m => !keyFor(m))) { openSettings(); renderAll(); return; }
+  const hist = history;                       // stay with this chat even if the user switches away
   saveHistory();
   const chatId = currentId;
+  renderAll();
 
-  const bubble = addBubble({ role: "model", parts: [{ text: "" }] });
-  bubble.innerHTML = `<span class="typing"><i></i><i></i><i></i></span>`;
+  // Placeholder bubble(s) to stream into
+  const wrap = el("div", "msg model"), b = el("div", "bubble");
+  let bodies;
+  if (targets.length > 1) {
+    const grid = el("div", "cmp");
+    bodies = targets.map(t => {
+      const col = el("div", "cmp-col");
+      col.innerHTML = `<div class="cmp-head"><span>${esc(label(t))}</span></div>`;
+      const body = el("div", "body");
+      col.appendChild(body); grid.appendChild(col);
+      return body;
+    });
+    b.appendChild(grid);
+  } else {
+    bodies = [el("div", "body")];
+    b.appendChild(bodies[0]);
+  }
+  wrap.appendChild(b);
+  $("messages").appendChild(wrap);
+  bodies.forEach(x => (x.innerHTML = TYPING));
   scrollDown();
 
   controller = new AbortController();
   setBusy(true);
-  let reply = "";
+  const opts = { search: mode.search };
+  const results = await Promise.all(targets.map((model, k) => streamReply(model, hist, bodies[k], controller.signal, opts)));
+  controller = null;
+  setBusy(false);
 
-  try {
-    const res = await fetch(
-      ...(providerOf(settings.model) ? openaiRequest() : geminiRequest()),
-    );
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try { msg = (await res.json()).error?.message || msg; } catch {}
-      throw new Error(msg);
+  if (results.every(r => r.error)) {
+    // Nothing worked: put the message back in the box so it can be sent again
+    const user = hist.pop();
+    saveHistory(hist, chatId);
+    if (hist === history) {
+      renderAll();
+      if (!history.length) $("messages").innerHTML = "";
+      const err = addBubble({ role: "model", parts: [] });
+      err.classList.add("error");
+      err.querySelector(".body").innerHTML = `<span class="errtxt">${esc(results[0].error)}</span>`;
+      restoreDraft(user);
     }
+    return;
+  }
+
+  let msg;
+  if (targets.length > 1) {
+    const pick = results.findIndex(r => !r.error);
+    msg = {
+      role: "model",
+      compare: results.map((r, k) => ({ model: targets[k], text: r.error ? "" : r.text, ...(r.error ? { error: r.error } : {}) })),
+      pick,
+      parts: [{ text: results[pick].text }],
+    };
+  } else {
+    const r = results[0];
+    msg = {
+      role: "model",
+      model: targets[0],
+      parts: [...(r.text ? [{ text: r.text }] : []), ...r.images.map(im => ({ inlineData: im }))],
+      ...(r.sources.length ? { sources: r.sources } : {}),
+    };
+  }
+  hist.push(msg);
+  saveHistory(hist, chatId);
+  if (hist === history) renderAll();
+  Sound.done();
+}
+
+function restoreDraft(user) {
+  $("input").value = userText(user);
+  pending = user.parts.filter(p => p.inlineData).map(p => p.fileName
+    ? { mimeType: p.inlineData.mimeType, data: p.inlineData.data, name: p.fileName, text: p.fileText ?? "" }
+    : { mimeType: p.inlineData.mimeType, data: p.inlineData.data });
+  renderAttachments();
+  autosize();
+}
+
+async function errorOf(res) {
+  try { return (await res.json()).error?.message || `HTTP ${res.status}`; } catch { return `HTTP ${res.status}`; }
+}
+
+// Stream one model's reply into `body`. Resolves to { text, images, sources, error? }.
+async function streamReply(model, msgs, body, signal, opts = {}) {
+  let text = "";
+  const images = [], sources = [];
+  const paint = () => {
+    const stick = nearBottom();
+    body.innerHTML = render(text);
+    if (stick) scrollDown();
+  };
+  try {
+    if (isImageModel(model)) {
+      const res = await fetch(`${API}/models/${model}:generateContent`, geminiInit(model, msgs, signal, { image: true }));
+      if (!res.ok) throw new Error(await errorOf(res));
+      const data = await res.json();
+      if (data.promptFeedback?.blockReason) throw new Error(`Blocked: ${data.promptFeedback.blockReason}`);
+      for (const p of data.candidates?.[0]?.content?.parts || []) {
+        if (p.text && !p.thought) text += p.text;
+        const d = p.inlineData || p.inline_data;
+        if (d?.data) images.push({ mimeType: d.mimeType || d.mime_type || "image/png", data: d.data });
+      }
+      if (!images.length && !text) throw new Error("No image came back. Try describing it differently.");
+      paint();
+      return { text, images, sources };
+    }
+
+    const [url, init] = providerOf(model)
+      ? openaiRequest(model, msgs, signal)
+      : [`${API}/models/${model}:streamGenerateContent?alt=sse`, geminiInit(model, msgs, signal, opts)];
+    const res = await fetch(url, init);
+    if (!res.ok) throw new Error(await errorOf(res));
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -935,84 +1353,78 @@ async function send() {
       buf = lines.pop();
       for (const line of lines) {
         if (!line.startsWith("data:") || line.includes("[DONE]")) continue;
-        try {
-          const chunk = JSON.parse(line.slice(5));
-          if (chunk.error) throw new Error(`Blocked: ${chunk.error.message || "stream error"}`);
-          const t = providerOf(settings.model)
-            ? chunk.choices?.[0]?.delta?.content || ""
-            : (chunk.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("");
-          if (t) {
-            reply += t;
-            const stick = nearBottom();
-            bubble.innerHTML = render(reply);
-            if (stick) scrollDown();
-          }
+        let chunk;
+        try { chunk = JSON.parse(line.slice(5)); } catch { continue; }
+        if (chunk.error) throw new Error(chunk.error.message || "The model stopped with an error.");
+        let t;
+        if (providerOf(model)) {
+          t = chunk.choices?.[0]?.delta?.content || "";
+        } else {
           if (chunk.promptFeedback?.blockReason) throw new Error(`Blocked: ${chunk.promptFeedback.blockReason}`);
-        } catch (e) { if (e.message.startsWith("Blocked")) throw e; }
+          const cand = chunk.candidates?.[0];
+          t = (cand?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("");
+          for (const g of cand?.groundingMetadata?.groundingChunks || []) {
+            if (g.web?.uri && !sources.some(x => x.uri === g.web.uri)) sources.push({ uri: g.web.uri, title: g.web.title || "Source" });
+          }
+        }
+        if (t) { text += t; paint(); }
       }
     }
-    if (!reply) reply = "_(No response)_";
+    if (!text) text = "_(No response)_";
+    return { text, images, sources };
   } catch (e) {
-    if (e.name === "AbortError") {
-      reply += reply ? "\n\n_(stopped)_" : "_(stopped)_";
-    } else {
-      bubble.parentElement.classList.add("error");
-      bubble.textContent = e.message;
-      hist.pop();             // drop the failed user turn so the chat stays valid
-      bubble.parentElement.previousElementSibling?.remove();
-      $("input").value = text; autosize();
-      saveHistory(hist, chatId);
-      controller = null; setBusy(false);
-      return;
-    }
+    if (e.name === "AbortError") return { text: text + (text ? "\n\n" : "") + "_(stopped)_", images, sources };
+    body.innerHTML = `<span class="errtxt">${esc(e.message)}</span>`;
+    return { error: e.message, text, images, sources };
   }
-
-  bubble.innerHTML = render(reply);
-  decorateCode(bubble);
-  hist.push({ role: "model", parts: [{ text: reply }] });
-  saveHistory(hist, chatId);
-  controller = null;
-  setBusy(false);
 }
 
-function geminiRequest() {
-  const gemma = settings.model.startsWith("gemma");
-  const contents = history.map(m => ({
-    role: m.role,
-    parts: m.parts.map(p => p.fileName
-      ? (gemma ? { text: pdfAsText(p) } : { inlineData: p.inlineData })
-      : p),
-  }));
-  const body = {
-    contents,
-    generationConfig: { temperature: Number(settings.temperature) },
-  };
-  const sys = settings.systemPrompt.trim();
-  if (sys && gemma) {
+// Instructions from the chosen persona plus the user's own system instructions
+function systemText() {
+  const preset = allPresets().find(p => p.id === settings.preset);
+  return [preset?.prompt, settings.systemPrompt.trim()].filter(Boolean).join("\n\n");
+}
+
+function geminiInit(model, msgs, signal, { search = false, image = false } = {}) {
+  const gemma = model.startsWith("gemma");
+  const media = (p) => ({ inlineData: { mimeType: p.inlineData.mimeType, data: p.inlineData.data } });
+  const contents = msgs.map(m => ({
+    role: m.role === "model" ? "model" : "user",
+    parts: m.parts.flatMap(p =>
+      p.fileName ? [gemma || !p.inlineData ? { text: pdfAsText(p) } : media(p)]
+      // Earlier generated images only go back to the image model (so it can edit them)
+      : p.inlineData ? (m.role === "model" && !image ? [] : [media(p)])
+      : p.text ? [{ text: p.text }] : []),
+  })).filter(c => c.parts.length);
+  const body = { contents, generationConfig: { temperature: Number(settings.temperature) } };
+  if (image) body.generationConfig.responseModalities = ["TEXT", "IMAGE"];
+  const sys = image ? "" : systemText();
+  if (sys && gemma && contents.length) {
     // Gemma doesn't accept system instructions, so fold them into the first message.
-    const [first, ...rest] = contents;
-    body.contents = [{ role: "user", parts: [{ text: `Instructions: ${sys}` }, ...first.parts] }, ...rest];
+    contents[0] = { role: "user", parts: [{ text: `Instructions: ${sys}` }, ...contents[0].parts] };
   } else if (sys) {
     body.systemInstruction = { parts: [{ text: sys }] };
   }
-  return [`${API}/models/${settings.model}:streamGenerateContent?alt=sse`, {
+  if (search && !gemma && !image) body.tools = [{ google_search: {} }];
+  return {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": settings.apiKey },
     body: JSON.stringify(body),
-    signal: controller.signal,
-  }];
+    signal,
+  };
 }
 
 // Groq and Mistral speak the OpenAI chat format, so translate our history into it.
-function openaiRequest() {
-  const id = providerOf(settings.model);
+function openaiRequest(model, msgs, signal) {
+  const id = providerOf(model);
   const prov = PROVIDERS[id];
   const messages = [];
-  const sys = settings.systemPrompt.trim();
+  const sys = systemText();
   if (sys) messages.push({ role: "system", content: sys });
-  for (const m of history) {
+  for (const m of msgs) {
     const text = [...m.parts.filter(p => p.fileName).map(pdfAsText), ...m.parts.filter(p => p.text).map(p => p.text)].join("\n\n");
-    const images = m.parts.filter(p => p.inlineData && !p.fileName);
+    const images = m.role === "user" ? m.parts.filter(p => p.inlineData && !p.fileName) : [];
+    if (!text && !images.length) continue;
     messages.push({
       role: m.role === "model" ? "assistant" : "user",
       content: images.length
@@ -1024,17 +1436,18 @@ function openaiRequest() {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings[prov.key]}` },
     body: JSON.stringify({
-      model: settings.model.slice(id.length + 1),
+      model: model.slice(id.length + 1),
       messages,
       temperature: Math.min(Number(settings.temperature), prov.maxTemp),
       stream: true,
     }),
-    signal: controller.signal,
+    signal,
   }];
 }
 
 // For models that can't read PDF files directly, send the text we pulled out of it.
 function pdfAsText(p) {
+  if (!p.inlineData && p.fileText == null) return `[PDF: ${p.fileName}] (file no longer available)`;
   return `[PDF: ${p.fileName}]\n${p.fileText || "(No selectable text found. It may be a scanned PDF; try a Gemini model.)"}`;
 }
 
@@ -1056,15 +1469,55 @@ function saveHistory(hist = history, id = currentId) {
   }
   const chat = chats.find(c => c.id === id);
   if (!chat) return;                          // deleted while a reply was streaming
-  // Keep localStorage small: don't persist image or PDF data across reloads
-  chat.messages = hist.map(m => ({ role: m.role, parts: m.parts.map(p =>
-    p.fileName ? { text: `[PDF: ${p.fileName}]` } : p.inlineData ? { text: "[image]" } : p) }));
+  chat.messages = hist.map(slimMessage);
   chat.title = titleFor(hist);
   chat.updated = Date.now();
   chats.sort((a, b) => b.updated - a.updated);
   persistChats();
   renderChatList();
 }
+// localStorage is small, so image and PDF data live in IndexedDB; chats keep a `ref` to it.
+const Media = (() => {
+  let dbp;
+  const db = () => dbp ??= new Promise((resolve, reject) => {
+    const r = indexedDB.open("prism", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("media");
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+  const run = async (rw, fn) => {
+    const d = await db();
+    return new Promise((resolve, reject) => {
+      const t = d.transaction("media", rw);
+      const req = fn(t.objectStore("media"));
+      t.oncomplete = () => resolve(req?.result);
+      t.onerror = () => reject(t.error);
+    });
+  };
+  return {
+    put: (id, v) => run("readwrite", st => st.put(v, id)).catch(() => {}),
+    get: (id) => run("readonly", st => st.get(id)).catch(() => undefined),
+    del: (id) => run("readwrite", st => st.delete(id)).catch(() => {}),
+  };
+})();
+function slimMessage(m) {
+  return { ...m, parts: m.parts.map(p => {
+    if (!p.inlineData) return p;
+    if (!p.ref) { p.ref = uid(); Media.put(p.ref, { data: p.inlineData.data, fileText: p.fileText }); }
+    return { ref: p.ref, mimeType: p.inlineData.mimeType, ...(p.fileName ? { fileName: p.fileName } : {}) };
+  }) };
+}
+// Load image/PDF data back into a chat's messages
+async function hydrate(msgs) {
+  await Promise.all(msgs.flatMap(m => m.parts).filter(p => p.ref && !p.inlineData).map(async p => {
+    const v = await Media.get(p.ref);
+    if (v?.data) {
+      p.inlineData = { mimeType: p.mimeType, data: v.data };
+      if (v.fileText != null) p.fileText = v.fileText;
+    }
+  }));
+}
+
 function persistChats() {
   chats = chats.filter(c => c.messages.length).slice(0, 300);
   while (true) {
@@ -1081,19 +1534,23 @@ function persistChats() {
 }
 
 /* ---------- Chat history sidebar ---------- */
-function openChat(id) {
+async function openChat(id) {
   if (controller) controller.abort();
   const chat = chats.find(c => c.id === id);
   currentId = chat ? id : null;
-  history = chat ? chat.messages.map(m => ({ role: m.role, parts: m.parts.map(p => ({ ...p })) })) : [];
+  const msgs = structuredClone(chat?.messages ?? []);
+  history = msgs;
   store.set("gc.current", currentId);
   pending = []; renderAttachments();
-  renderAll(); renderChatList();
+  renderChatList();
+  await hydrate(msgs);
+  if (history === msgs) renderAll();
 }
 function newChat() { openChat(null); $("input").focus(); }
 function deleteChat(id) {
   const chat = chats.find(c => c.id === id);
   if (!chat || !confirm(`Delete "${chat.title}"?`)) return;
+  chat.messages.flatMap(m => m.parts).forEach(p => p.ref && Media.del(p.ref));
   chats = chats.filter(c => c.id !== id);
   if (id === currentId) openChat(null);
   persistChats(); renderChatList();
@@ -1226,6 +1683,172 @@ $("input").addEventListener("keydown", (e) => {
 $("send").onclick = send;
 $("newChat").onclick = newChat;
 
+/* ---------- Voice input ---------- */
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+if (!Recognition) $("micBtn").hidden = true;
+$("micBtn").onclick = () => {
+  if (rec) { rec.stop(); return; }
+  rec = new Recognition();
+  rec.lang = navigator.language || "en-US";
+  rec.interimResults = true;
+  rec.continuous = true;
+  const base = $("input").value.trim() ? $("input").value.trim() + " " : "";
+  let heard = "";
+  rec.onresult = (e) => {
+    let interim = "";
+    for (let k = e.resultIndex; k < e.results.length; k++) {
+      if (e.results[k].isFinal) heard += e.results[k][0].transcript;
+      else interim += e.results[k][0].transcript;
+    }
+    $("input").value = base + heard + interim;
+    autosize();
+  };
+  rec.onerror = (e) => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed")
+      alert("Microphone access is blocked. Allow it for this site in your browser settings to use voice input.");
+  };
+  rec.onend = () => { rec = null; $("micBtn").classList.remove("rec"); $("input").focus(); };
+  try { rec.start(); $("micBtn").classList.add("rec"); } catch { rec = null; }
+};
+
+/* ---------- Read aloud ---------- */
+let speakingBtn = null;
+function stopSpeaking() {
+  speechSynthesis.cancel();
+  if (speakingBtn) speakingBtn.innerHTML = `${ICONS.speak}<span>Listen</span>`;
+  speakingBtn = null;
+}
+function speak(bubble, btn) {
+  const same = speakingBtn === btn;
+  stopSpeaking();
+  if (same) return;
+  const clone = bubble.cloneNode(true);
+  clone.querySelectorAll("pre, .acts, .sources, .gen, .katex-mathml, .cmp-head, .mermaid").forEach(n => n.remove());
+  const u = new SpeechSynthesisUtterance(clone.textContent.replace(/\s+/g, " ").trim());
+  u.onend = u.onerror = () => { if (speakingBtn === btn) stopSpeaking(); };
+  speakingBtn = btn;
+  btn.innerHTML = `${ICONS.stop}<span>Stop</span>`;
+  speechSynthesis.speak(u);
+}
+
+/* ---------- Sounds (made on the fly, no audio files) ---------- */
+const Sound = (() => {
+  let ctx;
+  const ac = () => (ctx ??= new (window.AudioContext || window.webkitAudioContext)());
+  function send() {                           // soft whoosh
+    if (!settings.sounds) return;
+    try {
+      const c = ac(), t = c.currentTime, len = 0.38;
+      const buf = c.createBuffer(1, Math.floor(c.sampleRate * len), c.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+      const src = c.createBufferSource(); src.buffer = buf;
+      const f = c.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.1;
+      f.frequency.setValueAtTime(450, t); f.frequency.exponentialRampToValueAtTime(3200, t + len);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 0.07);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      src.connect(f).connect(g).connect(c.destination);
+      src.start(t); src.stop(t + len);
+    } catch {}
+  }
+  function done() {                           // gentle two-note chime
+    if (!settings.sounds) return;
+    try {
+      const c = ac(), t = c.currentTime;
+      [[659, 0], [988, 0.09]].forEach(([hz, dt]) => {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = "sine"; o.frequency.value = hz;
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.045, t + dt + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.4);
+        o.connect(g).connect(c.destination);
+        o.start(t + dt); o.stop(t + dt + 0.45);
+      });
+    } catch {}
+  }
+  return { send, done };
+})();
+
+/* ---------- Composer tools: search, image, compare, persona ---------- */
+function syncTools() {
+  const gemini = !providerOf(settings.model) && !settings.model.startsWith("gemma");
+  const searchOk = !mode.image && (gemini || mode.compare);
+  $("searchChip").disabled = !searchOk;
+  $("searchChip").title = searchOk ? "Let Gemini search the web and show sources" : "Web search works with Gemini models";
+  $("searchChip").setAttribute("aria-pressed", mode.search && searchOk);
+  $("imageChip").setAttribute("aria-pressed", mode.image);
+  $("compareChip").setAttribute("aria-pressed", mode.compare);
+  $("compareChip").querySelector("span").textContent = mode.compare ? `Compare · ${currentTargets().length}` : "Compare";
+  $("model").disabled = mode.image;
+  $("input").placeholder = mode.image ? "Describe an image to create" : mode.compare ? "Ask all selected models" : "Ask anything";
+}
+$("searchChip").onclick = () => { mode.search = !mode.search; syncTools(); };
+$("imageChip").onclick = () => {
+  if (!settings.apiKey) { openSettings(); return; }
+  mode.image = !mode.image;
+  if (mode.image) mode.compare = false;
+  syncTools();
+};
+
+$("compareChip").onclick = () => {
+  const chosen = new Set(compareModels.length ? compareModels : [settings.model]);
+  let html = "";
+  for (const g of $("model").querySelectorAll("optgroup")) {
+    html += `<div class="grp">${esc(g.label)}</div>`;
+    for (const o of g.querySelectorAll("option")) {
+      const off = !keyFor(o.value);
+      html += `<label${off ? ' title="Add this provider\'s API key in Settings"' : ""}><input type="checkbox" value="${esc(o.value)}"${chosen.has(o.value) ? " checked" : ""}${off ? " disabled" : ""}> ${esc(o.textContent)}</label>`;
+    }
+  }
+  $("cmpList").innerHTML = html;
+  $("cmpList").querySelectorAll("input").forEach(cb => cb.onchange = () => {
+    if ($("cmpList").querySelectorAll("input:checked").length > 3) cb.checked = false;
+  });
+  $("compareDlg").showModal();
+};
+$("compareDlg").addEventListener("close", () => {
+  const v = $("compareDlg").returnValue;
+  if (v === "on") {
+    const picked = [...$("cmpList").querySelectorAll("input:checked")].map(cb => cb.value);
+    if (picked.length < 2) { alert("Pick at least 2 models to compare."); return; }
+    compareModels = picked;
+    store.set("gc.compare", compareModels);
+    mode.compare = true; mode.image = false;
+  } else if (v === "off") {
+    mode.compare = false;
+  }
+  syncTools();
+});
+
+const allPresets = () => [...PRESETS, ...settings.customPresets];
+function renderPresets() {
+  const list = allPresets();
+  if (!list.some(p => p.id === settings.preset)) settings.preset = "default";
+  $("presetSel").innerHTML = list.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+  $("presetSel").value = settings.preset;
+  $("presetList").innerHTML = settings.customPresets.length
+    ? settings.customPresets.map(p => `<div class="preset-row"><b>${esc(p.name)}</b><span>${esc(p.prompt)}</span><button type="button" data-id="${esc(p.id)}" title="Delete persona">✕</button></div>`).join("")
+    : "";
+  $("presetList").querySelectorAll("button").forEach(b => b.onclick = () => {
+    settings.customPresets = settings.customPresets.filter(p => p.id !== b.dataset.id);
+    store.set("gc.settings", settings);
+    renderPresets();
+  });
+}
+$("presetSel").onchange = (e) => { settings.preset = e.target.value; store.set("gc.settings", settings); };
+$("addPreset").onclick = () => {
+  const name = $("presetName").value.trim(), prompt = $("presetPrompt").value.trim();
+  if (!name || !prompt) { alert("Give the persona a name and some instructions."); return; }
+  settings.customPresets.push({ id: "c-" + uid(), name, prompt });
+  store.set("gc.settings", settings);
+  $("presetName").value = ""; $("presetPrompt").value = "";
+  renderPresets();
+};
+$("soundsToggle").onchange = (e) => { settings.sounds = e.target.checked; store.set("gc.settings", settings); if (settings.sounds) Sound.done(); };
+
 /* ---------- Settings ---------- */
 function openSettings() {
   document.querySelectorAll(".keyfield").forEach(f => {
@@ -1238,6 +1861,8 @@ function openSettings() {
   $("systemPrompt").value = settings.systemPrompt;
   $("temperature").value = settings.temperature;
   $("tempVal").textContent = settings.temperature;
+  $("soundsToggle").checked = settings.sounds;
+  renderPresets();
   $("settings").showModal();
 }
 document.querySelectorAll(".keyfield").forEach(f => {
@@ -1662,7 +2287,8 @@ Backdrop.setScene(settings.wallpaper);
 
 /* ---------- Boot ---------- */
 setBusy(false);
-loadModels().then(() => { store.set("gc.settings", settings); renderAll(); });
+renderPresets();
+Promise.all([loadModels(), hydrate(history)]).then(() => { store.set("gc.settings", settings); renderAll(); });
 </script>
 </body>
 </html>
