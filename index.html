@@ -388,6 +388,9 @@
     <label for="apiKey">Gemini API key</label>
     <input id="apiKey" type="password" placeholder="AIza…" autocomplete="off">
     <small>Get a free key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. It's saved only in this browser and sent only to Google.</small>
+    <label for="groqKey">Groq API key <span>Optional</span></label>
+    <input id="groqKey" type="password" placeholder="gsk_…" autocomplete="off">
+    <small>Adds fast open models like Llama. Get a free key from <a href="https://console.groq.com/keys" target="_blank" rel="noopener">GroqCloud</a>. Sent only to Groq.</small>
     <label for="systemPrompt">System instructions <span>Optional</span></label>
     <textarea id="systemPrompt" placeholder="e.g. You are a concise, friendly assistant."></textarea>
     <label for="temperature">Creativity <span id="tempVal"></span></label>
@@ -402,6 +405,7 @@
 <script>
 const API = "https://generativelanguage.googleapis.com/v1beta";
 const FALLBACK_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const GROQ_API = "https://api.groq.com/openai/v1";
 const FALLBACK_GEMMA = ["gemma-3-27b-it", "gemma-3-12b-it", "gemma-3-4b-it"];
 const ICON_SEND = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`;
 const ICON_STOP = `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>`;
@@ -418,8 +422,11 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 
-let settings = store.get("gc.settings", { apiKey: "", systemPrompt: "", temperature: 1, model: "" });
+let settings = store.get("gc.settings", { apiKey: "", groqKey: "", systemPrompt: "", temperature: 1, model: "" });
 let history = store.get("gc.history", []);   // [{role:'user'|'model', parts:[...]}]
+settings.groqKey ??= "";
+const isGroq = (model) => model.startsWith("groq:");
+const keyFor = (model) => isGroq(model) ? settings.groqKey : settings.apiKey;
 let pending = [];                             // images waiting to send
 let controller = null;
 
@@ -446,15 +453,32 @@ async function loadModels() {
       }
     } catch {}
   }
-  const opts = (arr) => arr.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  const groq = await loadGroqModels();
+  const opts = (arr) => arr.map(n => `<option value="${esc(n)}">${esc(n.replace(/^groq:/, ""))}</option>`).join("");
   sel.innerHTML = `<optgroup label="Gemini">${opts(names)}</optgroup>`
-    + (gemma.length ? `<optgroup label="Gemma · open models">${opts(gemma)}</optgroup>` : "");
-  const all = [...names, ...gemma];
-  const preferred = settings.model && all.includes(settings.model)
+    + (gemma.length ? `<optgroup label="Gemma · open models">${opts(gemma)}</optgroup>` : "")
+    + (groq.length ? `<optgroup label="Groq · fast open models">${opts(groq)}</optgroup>` : "");
+  const all = [...names, ...gemma, ...groq];
+  const preferred = settings.model && all.includes(settings.model) && keyFor(settings.model)
     ? settings.model
-    : names.find(n => /flash$/.test(n)) || names[0];
+    : (!settings.apiKey && groq.length ? groq.find(n => /llama/.test(n)) || groq[0] : null)
+      || names.find(n => /flash$/.test(n)) || names[0];
   sel.value = preferred;
   settings.model = preferred;
+}
+
+// Chat models from Groq (only when a Groq key is set), minus speech/safety models.
+async function loadGroqModels() {
+  if (!settings.groqKey) return [];
+  try {
+    const r = await fetch(`${GROQ_API}/models`, { headers: { Authorization: `Bearer ${settings.groqKey}` } });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return (data.data || [])
+      .filter(m => m.active !== false && !/whisper|tts|guard|playai|orpheus|distil/i.test(m.id))
+      .map(m => "groq:" + m.id)
+      .sort();
+  } catch { return []; }
 }
 
 // Newest Gemma generation only (e.g. gemma-3-*), biggest size first.
@@ -501,14 +525,14 @@ function renderAll() {
 
 function renderHero() {
   const box = $("messages");
-  const hasKey = !!settings.apiKey;
+  const hasKey = !!(settings.apiKey || settings.groqKey);
   box.innerHTML = `
     <section class="hero">
       <div class="eyebrow">Powered by Google Gemini</div>
       <h2>Ask anything.<br><span class="grad">Get brilliant answers.</span></h2>
       <p>${hasKey
         ? "Write, learn, plan and code, or drop in a photo and ask about it."
-        : "Add your free Gemini API key to get started. It only takes a minute."}</p>
+        : "Add a free Gemini or Groq API key to get started. It only takes a minute."}</p>
       ${hasKey
         ? `<div class="cards">${SUGGESTIONS.map((s, i) =>
             `<div class="card" data-i="${i}" role="button" tabindex="0"><div class="ic">${s.ic}</div><b>${s.t}</b><span>${s.d}</span></div>`).join("")}</div>`
@@ -570,7 +594,7 @@ async function send() {
   if (controller) { controller.abort(); return; }
   const text = $("input").value.trim();
   if (!text && !pending.length) return;
-  if (!settings.apiKey) { openSettings(); return; }
+  if (!keyFor(settings.model)) { openSettings(); return; }
 
   const parts = [...pending.map(p => ({ inlineData: p })), ...(text ? [{ text }] : [])];
   const userMsg = { role: "user", parts };
@@ -590,25 +614,9 @@ async function send() {
   let reply = "";
 
   try {
-    const body = {
-      contents: history,
-      generationConfig: { temperature: Number(settings.temperature) },
-    };
-    const sys = settings.systemPrompt.trim();
-    if (sys && settings.model.startsWith("gemma")) {
-      // Gemma doesn't accept system instructions, so fold them into the first message.
-      const [first, ...rest] = history;
-      body.contents = [{ role: "user", parts: [{ text: `Instructions: ${sys}` }, ...first.parts] }, ...rest];
-    } else if (sys) {
-      body.systemInstruction = { parts: [{ text: sys }] };
-    }
-
-    const res = await fetch(`${API}/models/${settings.model}:streamGenerateContent?alt=sse`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": settings.apiKey },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+    const res = await fetch(
+      ...(isGroq(settings.model) ? groqRequest() : geminiRequest()),
+    );
     if (!res.ok) {
       let msg = `HTTP ${res.status}`;
       try { msg = (await res.json()).error?.message || msg; } catch {}
@@ -625,11 +633,13 @@ async function send() {
       const lines = buf.split("\n");
       buf = lines.pop();
       for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
+        if (!line.startsWith("data:") || line.includes("[DONE]")) continue;
         try {
           const chunk = JSON.parse(line.slice(5));
-          const cand = chunk.candidates?.[0];
-          const t = (cand?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("");
+          if (chunk.error) throw new Error(`Blocked: ${chunk.error.message || "stream error"}`);
+          const t = isGroq(settings.model)
+            ? chunk.choices?.[0]?.delta?.content || ""
+            : (chunk.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("");
           if (t) {
             reply += t;
             const stick = nearBottom();
@@ -662,6 +672,55 @@ async function send() {
   saveHistory();
   controller = null;
   setBusy(false);
+}
+
+function geminiRequest() {
+  const body = {
+    contents: history,
+    generationConfig: { temperature: Number(settings.temperature) },
+  };
+  const sys = settings.systemPrompt.trim();
+  if (sys && settings.model.startsWith("gemma")) {
+    // Gemma doesn't accept system instructions, so fold them into the first message.
+    const [first, ...rest] = history;
+    body.contents = [{ role: "user", parts: [{ text: `Instructions: ${sys}` }, ...first.parts] }, ...rest];
+  } else if (sys) {
+    body.systemInstruction = { parts: [{ text: sys }] };
+  }
+  return [`${API}/models/${settings.model}:streamGenerateContent?alt=sse`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": settings.apiKey },
+    body: JSON.stringify(body),
+    signal: controller.signal,
+  }];
+}
+
+// Groq speaks the OpenAI chat format, so translate our history into it.
+function groqRequest() {
+  const messages = [];
+  const sys = settings.systemPrompt.trim();
+  if (sys) messages.push({ role: "system", content: sys });
+  for (const m of history) {
+    const text = m.parts.filter(p => p.text).map(p => p.text).join("\n");
+    const images = m.parts.filter(p => p.inlineData);
+    messages.push({
+      role: m.role === "model" ? "assistant" : "user",
+      content: images.length
+        ? [{ type: "text", text }, ...images.map(p => ({ type: "image_url", image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` } }))]
+        : text,
+    });
+  }
+  return [`${GROQ_API}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.groqKey}` },
+    body: JSON.stringify({
+      model: settings.model.replace(/^groq:/, ""),
+      messages,
+      temperature: Number(settings.temperature),
+      stream: true,
+    }),
+    signal: controller.signal,
+  }];
 }
 
 function setBusy(b) {
@@ -730,6 +789,7 @@ $("newChat").onclick = () => {
 /* ---------- Settings ---------- */
 function openSettings() {
   $("apiKey").value = settings.apiKey;
+  $("groqKey").value = settings.groqKey;
   $("systemPrompt").value = settings.systemPrompt;
   $("temperature").value = settings.temperature;
   $("tempVal").textContent = settings.temperature;
@@ -739,8 +799,9 @@ $("temperature").oninput = (e) => ($("tempVal").textContent = e.target.value);
 $("openSettings").onclick = openSettings;
 $("settings").addEventListener("close", async () => {
   if ($("settings").returnValue !== "save") return;
-  const keyChanged = $("apiKey").value.trim() !== settings.apiKey;
+  const keyChanged = $("apiKey").value.trim() !== settings.apiKey || $("groqKey").value.trim() !== settings.groqKey;
   settings.apiKey = $("apiKey").value.trim();
+  settings.groqKey = $("groqKey").value.trim();
   settings.systemPrompt = $("systemPrompt").value;
   settings.temperature = Number($("temperature").value);
   store.set("gc.settings", settings);
