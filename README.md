@@ -6,6 +6,7 @@ fast open models (like Llama) through Groq and Mistral's own models. It's a sing
 
 ## Features
 - Streams replies as they're written
+- Chat history: every conversation is saved in your browser, with search and delete
 - Choose the newest Gemini and Gemma models (the list loads automatically)
 - Optional: add a free Groq key for fast open models like Llama
 - Optional: add a free Mistral key for Mistral's models

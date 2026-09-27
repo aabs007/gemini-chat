@@ -233,6 +233,61 @@
   [data-theme="dark"] .msg.model .bubble { text-shadow: 0 1px 14px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.6); }
   [data-theme="dark"] .hero h2 .grad { text-shadow: none; }
 
+  /* ---------- Chat history sidebar ---------- */
+  #sidebar {
+    position: fixed; z-index: 30; top: 0; bottom: 0; left: 0;
+    width: min(320px, 86vw);
+    display: flex; flex-direction: column;
+    background: var(--glass);
+    backdrop-filter: saturate(180%) blur(28px); -webkit-backdrop-filter: saturate(180%) blur(28px);
+    border-right: 1px solid var(--hairline);
+    box-shadow: var(--shadow-lg);
+    transform: translateX(-105%);
+    transition: transform .4s cubic-bezier(.2,.8,.2,1);
+    padding: 12px 10px max(12px, env(safe-area-inset-bottom));
+  }
+  body.side-open #sidebar { transform: none; }
+  #scrim {
+    position: fixed; inset: 0; z-index: 29; background: rgba(0,0,0,.3);
+    opacity: 0; pointer-events: none; transition: opacity .3s;
+  }
+  body.side-open #scrim { opacity: 1; pointer-events: auto; }
+  .side-top { display: flex; align-items: center; gap: 6px; padding: 2px 4px 10px; }
+  .side-top h3 { margin: 0 auto 0 4px; font-size: 17px; letter-spacing: -0.02em; }
+  #newChatSide {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; border: none; border-radius: 12px; padding: 10px;
+    font-size: 15px; font-weight: 500; color: #fff; cursor: pointer; margin-bottom: 10px;
+  }
+  #newChatSide svg { width: 16px; height: 16px; }
+  #chatSearch {
+    width: 100%; background: var(--bg-alt); border: 1px solid transparent; border-radius: 10px;
+    padding: 8px 12px; font-size: 14px; outline: none; margin-bottom: 8px;
+  }
+  #chatSearch:focus { border-color: var(--accent); }
+  #chatList { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+  .grp { font-size: 12px; font-weight: 600; color: var(--muted); padding: 12px 10px 4px; letter-spacing: 0; }
+  .chat-item {
+    display: flex; align-items: center; gap: 4px;
+    border-radius: 10px; padding: 0 4px 0 10px; cursor: pointer;
+    transition: background .15s;
+  }
+  .chat-item:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
+  .chat-item.active { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+  .chat-item .t {
+    flex: 1; min-width: 0; padding: 9px 0; font-size: 14px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .chat-item .del {
+    flex: none; opacity: 0; border: none; background: none; color: var(--muted);
+    width: 28px; height: 28px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  .chat-item:hover .del, .chat-item.active .del { opacity: 1; }
+  .chat-item .del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  @media (hover: none) { .chat-item .del { opacity: .7; } }
+  .side-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 30px 10px; }
+  .side-note { color: var(--muted); font-size: 12px; text-align: center; padding-top: 8px; letter-spacing: 0; }
+
   main {
     position: relative; z-index: 1;
     flex: 1; overflow-y: auto;
@@ -503,6 +558,9 @@
 </head>
 <body>
 <header>
+  <button class="pill" id="openSide" title="Chat history" style="margin-left:-8px">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+  </button>
   <div class="brand"><span class="spark"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"><path d="M12 3 21 19H3z"/></svg></span> Prism</div>
   <div class="select-wrap"><select id="model" title="Model"></select></div>
   <button class="pill" id="newChat" title="New chat">
@@ -520,6 +578,22 @@
   <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div>
   <canvas id="sky"></canvas>
 </div>
+
+<div id="scrim"></div>
+<aside id="sidebar" aria-label="Chat history">
+  <div class="side-top">
+    <h3>Chats</h3>
+    <button class="pill" id="closeSide" title="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <button id="newChatSide" class="shimmer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New chat
+  </button>
+  <input id="chatSearch" type="search" placeholder="Search chats" autocomplete="off">
+  <div id="chatList"></div>
+  <div class="side-note">Chats are saved in this browser only.</div>
+</aside>
 
 <main id="scroller">
   <div id="messages"></div>
@@ -620,7 +694,21 @@ const store = {
 };
 
 let settings = store.get("gc.settings", { apiKey: "", groqKey: "", mistralKey: "", systemPrompt: "", temperature: 1, model: "" });
-let history = store.get("gc.history", []);   // [{role:'user'|'model', parts:[...]}]
+// Saved conversations: [{ id, title, updated, messages: [{role, parts}] }], newest first.
+let chats = store.get("gc.chats", null);
+if (!chats) {                                 // first run: bring over the single saved chat, if any
+  const old = store.get("gc.history", []);
+  chats = old.length ? [{ id: uid(), title: titleFor(old), updated: Date.now(), messages: old }] : [];
+}
+let currentId = store.get("gc.current", chats[0]?.id ?? null);
+let history = chats.find(c => c.id === currentId)?.messages.slice() ?? [];   // [{role:'user'|'model', parts:[...]}]
+if (!history.length) currentId = null;
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function titleFor(msgs) {
+  const first = msgs.find(m => m.role === "user");
+  const t = first?.parts.map(p => p.text || (p.fileName ? `📄 ${p.fileName}` : "")).filter(Boolean).join(" ") || "New chat";
+  return t.replace(/\s+/g, " ").trim().slice(0, 60);
+}
 settings.groqKey ??= "";
 settings.mistralKey ??= "";
 const providerOf = (model) => PROVIDERS[model.split(":")[0]] && model.split(":")[0];
@@ -810,11 +898,13 @@ async function send() {
   ];
   const userMsg = { role: "user", parts };
   if (!history.length) $("messages").innerHTML = "";
-  history.push(userMsg);
+  const hist = history;                       // stay with this chat even if the user switches away
+  hist.push(userMsg);
   addBubble(userMsg);
   $("input").value = ""; autosize();
   pending = []; renderAttachments();
   saveHistory();
+  const chatId = currentId;
 
   const bubble = addBubble({ role: "model", parts: [{ text: "" }] });
   bubble.innerHTML = `<span class="typing"><i></i><i></i><i></i></span>`;
@@ -868,10 +958,10 @@ async function send() {
     } else {
       bubble.parentElement.classList.add("error");
       bubble.textContent = e.message;
-      history.pop();          // drop the failed user turn so the chat stays valid
+      hist.pop();             // drop the failed user turn so the chat stays valid
       bubble.parentElement.previousElementSibling?.remove();
       $("input").value = text; autosize();
-      saveHistory();
+      saveHistory(hist, chatId);
       controller = null; setBusy(false);
       return;
     }
@@ -879,8 +969,8 @@ async function send() {
 
   bubble.innerHTML = render(reply);
   decorateCode(bubble);
-  history.push({ role: "model", parts: [{ text: reply }] });
-  saveHistory();
+  hist.push({ role: "model", parts: [{ text: reply }] });
+  saveHistory(hist, chatId);
   controller = null;
   setBusy(false);
 }
@@ -957,12 +1047,95 @@ function updateSend() {
   $("send").disabled = !controller && !$("input").value.trim() && !pending.length;
 }
 
-function saveHistory() {
+function saveHistory(hist = history, id = currentId) {
+  if (!id) {
+    if (!hist.length) return;                 // don't save empty chats
+    id = uid();
+    if (hist === history) currentId = id;
+    chats.unshift({ id, title: "", updated: 0, messages: [] });
+  }
+  const chat = chats.find(c => c.id === id);
+  if (!chat) return;                          // deleted while a reply was streaming
   // Keep localStorage small: don't persist image or PDF data across reloads
-  const slim = history.map(m => ({ role: m.role, parts: m.parts.map(p =>
+  chat.messages = hist.map(m => ({ role: m.role, parts: m.parts.map(p =>
     p.fileName ? { text: `[PDF: ${p.fileName}]` } : p.inlineData ? { text: "[image]" } : p) }));
-  store.set("gc.history", slim);
+  chat.title = titleFor(hist);
+  chat.updated = Date.now();
+  chats.sort((a, b) => b.updated - a.updated);
+  persistChats();
+  renderChatList();
 }
+function persistChats() {
+  chats = chats.filter(c => c.messages.length).slice(0, 300);
+  while (true) {
+    try {
+      localStorage.setItem("gc.chats", JSON.stringify(chats));
+      localStorage.setItem("gc.current", JSON.stringify(currentId));
+      localStorage.removeItem("gc.history");
+      return;
+    } catch {
+      if (chats.length <= 1) return;          // storage full: drop the oldest chats until it fits
+      chats.pop();
+    }
+  }
+}
+
+/* ---------- Chat history sidebar ---------- */
+function openChat(id) {
+  if (controller) controller.abort();
+  const chat = chats.find(c => c.id === id);
+  currentId = chat ? id : null;
+  history = chat ? chat.messages.map(m => ({ role: m.role, parts: m.parts.map(p => ({ ...p })) })) : [];
+  store.set("gc.current", currentId);
+  pending = []; renderAttachments();
+  renderAll(); renderChatList();
+}
+function newChat() { openChat(null); $("input").focus(); }
+function deleteChat(id) {
+  const chat = chats.find(c => c.id === id);
+  if (!chat || !confirm(`Delete "${chat.title}"?`)) return;
+  chats = chats.filter(c => c.id !== id);
+  if (id === currentId) openChat(null);
+  persistChats(); renderChatList();
+}
+function renderChatList() {
+  const list = $("chatList");
+  const q = $("chatSearch").value.trim().toLowerCase();
+  const shown = !q ? chats : chats.filter(c =>
+    c.title.toLowerCase().includes(q) ||
+    c.messages.some(m => m.parts.some(p => (p.text || "").toLowerCase().includes(q))));
+  if (!shown.length) {
+    list.innerHTML = `<div class="side-empty">${q ? "No chats match your search." : "Your chats will appear here."}</div>`;
+    return;
+  }
+  const day = 864e5, today = new Date().setHours(0, 0, 0, 0);
+  const group = (t) => t >= today ? "Today" : t >= today - day ? "Yesterday"
+    : t >= today - 7 * day ? "Previous 7 days" : t >= today - 30 * day ? "Previous 30 days" : "Older";
+  let html = "", last = "";
+  for (const c of shown) {
+    const g = group(c.updated);
+    if (g !== last) { html += `<div class="grp">${g}</div>`; last = g; }
+    html += `<div class="chat-item${c.id === currentId ? " active" : ""}" data-id="${c.id}" title="${esc(c.title)}">
+      <span class="t">${esc(c.title)}</span><button class="del" title="Delete chat" aria-label="Delete chat">✕</button></div>`;
+  }
+  list.innerHTML = html;
+  list.querySelectorAll(".chat-item").forEach(el => {
+    el.onclick = () => { openChat(el.dataset.id); if (innerWidth < 900) toggleSide(false); };
+    el.querySelector(".del").onclick = (e) => { e.stopPropagation(); deleteChat(el.dataset.id); };
+  });
+}
+function toggleSide(open = !document.body.classList.contains("side-open")) {
+  document.body.classList.toggle("side-open", open);
+  if (open) renderChatList();
+}
+$("openSide").onclick = () => toggleSide(true);
+$("closeSide").onclick = () => toggleSide(false);
+$("scrim").onclick = () => toggleSide(false);
+$("newChatSide").onclick = () => { newChat(); toggleSide(false); };
+$("chatSearch").oninput = renderChatList;
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.body.classList.contains("side-open")) toggleSide(false);
+});
 
 /* ---------- Attachments ---------- */
 $("attachBtn").onclick = () => $("fileInput").click();
@@ -1051,10 +1224,7 @@ $("input").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
 });
 $("send").onclick = send;
-$("newChat").onclick = () => {
-  if (controller) controller.abort();
-  history = []; saveHistory(); renderAll(); $("input").focus();
-};
+$("newChat").onclick = newChat;
 
 /* ---------- Settings ---------- */
 function openSettings() {
