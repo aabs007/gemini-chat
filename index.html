@@ -454,16 +454,26 @@
   dialog .sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; }
   dialog label { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin: 16px 0 6px; }
   dialog label span { color: var(--muted); font-weight: 500; }
-  dialog input[type=password], dialog textarea {
+  dialog .keyfield, dialog textarea {
     width: 100%; background: var(--bg-alt); border: 1px solid transparent;
     border-radius: 12px; padding: 11px 14px; outline: none; font-size: 15px;
     transition: border-color .2s, box-shadow .2s;
   }
-  dialog input[type=password]:focus, dialog textarea:focus {
+  dialog .keyfield:focus-within, dialog textarea:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
   }
   dialog textarea { min-height: 84px; resize: vertical; }
+  .keyfield { display: flex; align-items: center; gap: 2px; padding: 4px 4px 4px 14px !important; }
+  .keyfield input {
+    flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+    padding: 7px 0; font-size: 15px;
+  }
+  .kbtn {
+    flex: none; border: none; background: transparent; color: var(--accent);
+    font-size: 13px; padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  }
+  .kbtn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
   dialog small { color: var(--muted); display: block; margin-top: 6px; font-size: 13px; line-height: 1.4; letter-spacing: 0; }
   dialog a { color: var(--accent); text-decoration: none; }
   dialog a:hover { text-decoration: underline; }
@@ -544,13 +554,13 @@
     <h2>Settings</h2>
     <p class="sub">Everything here stays on this device.</p>
     <label for="apiKey">Gemini API key</label>
-    <input id="apiKey" type="password" placeholder="AIza…" autocomplete="off">
+    <div class="keyfield"><input id="apiKey" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false" autocapitalize="off"><button type="button" class="kbtn" data-act="show">Show</button><button type="button" class="kbtn" data-act="copy">Copy</button><button type="button" class="kbtn" data-act="paste">Paste</button></div>
     <small>Get a free key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. It's saved only in this browser and sent only to Google.</small>
     <label for="groqKey">Groq API key <span>Optional</span></label>
-    <input id="groqKey" type="password" placeholder="gsk_…" autocomplete="off">
+    <div class="keyfield"><input id="groqKey" type="password" placeholder="gsk_…" autocomplete="off" spellcheck="false" autocapitalize="off"><button type="button" class="kbtn" data-act="show">Show</button><button type="button" class="kbtn" data-act="copy">Copy</button><button type="button" class="kbtn" data-act="paste">Paste</button></div>
     <small>Adds fast open models like Llama. Get a free key from <a href="https://console.groq.com/keys" target="_blank" rel="noopener">GroqCloud</a>. Sent only to Groq.</small>
     <label for="mistralKey">Mistral API key <span>Optional</span></label>
-    <input id="mistralKey" type="password" placeholder="Your Mistral key" autocomplete="off">
+    <div class="keyfield"><input id="mistralKey" type="password" placeholder="Your Mistral key" autocomplete="off" spellcheck="false" autocapitalize="off"><button type="button" class="kbtn" data-act="show">Show</button><button type="button" class="kbtn" data-act="copy">Copy</button><button type="button" class="kbtn" data-act="paste">Paste</button></div>
     <small>Adds Mistral's own models. Get a free key from <a href="https://console.mistral.ai/api-keys" target="_blank" rel="noopener">Mistral La Plateforme</a>. Sent only to Mistral.</small>
     <label for="systemPrompt">System instructions <span>Optional</span></label>
     <textarea id="systemPrompt" placeholder="e.g. You are a concise, friendly assistant."></textarea>
@@ -1048,6 +1058,10 @@ $("newChat").onclick = () => {
 
 /* ---------- Settings ---------- */
 function openSettings() {
+  document.querySelectorAll(".keyfield").forEach(f => {
+    f.querySelector("input").type = "password";
+    f.querySelector('[data-act="show"]').textContent = "Show";
+  });
   $("apiKey").value = settings.apiKey;
   $("groqKey").value = settings.groqKey;
   $("mistralKey").value = settings.mistralKey;
@@ -1056,6 +1070,24 @@ function openSettings() {
   $("tempVal").textContent = settings.temperature;
   $("settings").showModal();
 }
+document.querySelectorAll(".keyfield").forEach(f => {
+  const input = f.querySelector("input");
+  const flash = (btn, text) => { const old = btn.textContent; btn.textContent = text; setTimeout(() => (btn.textContent = old), 1200); };
+  f.querySelectorAll(".kbtn").forEach(btn => btn.onclick = async () => {
+    if (btn.dataset.act === "show") {
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.textContent = show ? "Hide" : "Show";
+    } else if (btn.dataset.act === "copy") {
+      if (!input.value) return;
+      try { await navigator.clipboard.writeText(input.value); flash(btn, "Copied"); }
+      catch { input.type = "text"; input.select(); document.execCommand("copy"); flash(btn, "Copied"); }
+    } else {
+      try { input.value = (await navigator.clipboard.readText()).trim(); flash(btn, "Pasted"); }
+      catch { input.focus(); flash(btn, "Press ⌘V"); }
+    }
+  });
+});
 $("temperature").oninput = (e) => ($("tempVal").textContent = e.target.value);
 $("openSettings").onclick = openSettings;
 $("settings").addEventListener("close", async () => {
