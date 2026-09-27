@@ -257,8 +257,18 @@
     letter-spacing: -0.045em;
     margin: 0 0 14px;
   }
+  /* Colour-shifting gradient: the colours loop, so sliding the background never jumps */
+  .shimmer {
+    background: linear-gradient(100deg, #2f6bff, #8b5cf6, #e6488a, #ff8a3d, #22c1ee, #2f6bff);
+    background-size: 300% 100%;
+    animation: shimmer 8s linear infinite;
+  }
+  @media (prefers-color-scheme: dark) {
+    .shimmer { background-image: linear-gradient(100deg, #5b8cff, #a78bfa, #f472b6, #ffa45c, #4dd8ff, #5b8cff); }
+  }
+  [data-theme="dark"] .shimmer { background-image: linear-gradient(100deg, #5b8cff, #a78bfa, #f472b6, #ffa45c, #4dd8ff, #5b8cff); }
+  @keyframes shimmer { to { background-position: 150% 0; } }
   .hero h2 .grad {
-    background: var(--grad);
     -webkit-background-clip: text; background-clip: text;
     color: transparent;
   }
@@ -425,8 +435,8 @@
   .round svg { width: 18px; height: 18px; }
   #attachBtn { background: transparent; color: var(--muted); }
   #attachBtn:hover { background: var(--bg-alt); color: var(--text); }
-  #send { background: var(--accent); color: var(--on-accent); }
-  #send:hover { background: var(--accent-hover); }
+  #send { color: #fff; box-shadow: 0 2px 10px rgba(139, 92, 246, .35); }
+  #send:hover { filter: brightness(1.1); }
   #send:disabled { opacity: .3; cursor: default; }
   .hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; letter-spacing: 0; }
 
@@ -514,7 +524,7 @@
       </button>
       <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf" multiple hidden>
       <textarea id="input" rows="1" placeholder="Ask anything"></textarea>
-      <button class="round" id="send" title="Send"></button>
+      <button class="round shimmer" id="send" title="Send"></button>
     </div>
   </div>
   <div class="hint">Return to send · Shift + Return for a new line</div>
@@ -708,7 +718,7 @@ function renderHero() {
   box.innerHTML = `
     <section class="hero">
       <div class="eyebrow">Gemini · Gemma · Groq · Mistral</div>
-      <h2>One window.<br><span class="grad">Every great model.</span></h2>
+      <h2>One window.<br><span class="grad shimmer">Every great model.</span></h2>
       <p>${hasKey
         ? "Write, learn, plan and code, or drop in a photo or PDF and ask about it."
         : "Add a free Gemini, Groq or Mistral API key to get started. It only takes a minute."}</p>
