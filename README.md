@@ -1,6 +1,6 @@
-# Gemini Chat
+# Prism
 
-A simple, single-page chat interface for Google's Gemini and Gemma models, plus
+One window, every great model. A simple, single-page chat interface for Google's Gemini and Gemma models, plus
 fast open models (like Llama) through Groq and Mistral's own models. It's a single
 `index.html` file with no build step and no server, so it works on GitHub Pages.
 
