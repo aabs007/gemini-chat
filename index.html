@@ -401,7 +401,8 @@
 
 <script>
 const API = "https://generativelanguage.googleapis.com/v1beta";
-const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
+const FALLBACK_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const FALLBACK_GEMMA = ["gemma-3-27b-it", "gemma-3-12b-it", "gemma-3-4b-it"];
 const ICON_SEND = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`;
 const ICON_STOP = `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>`;
 const SUGGESTIONS = [
@@ -429,7 +430,7 @@ const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": 
 /* ---------- Models ---------- */
 async function loadModels() {
   const sel = $("model");
-  let names = FALLBACK_MODELS;
+  let names = FALLBACK_MODELS, gemma = FALLBACK_GEMMA;
   if (settings.apiKey) {
     try {
       const r = await fetch(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": settings.apiKey } });
@@ -438,18 +439,34 @@ async function loadModels() {
         const list = (data.models || [])
           .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
           .map(m => m.name.replace("models/", ""))
-          .filter(n => n.startsWith("gemini") && !/embedding|tts|image-generation|live|audio/.test(n));
-        const latest = latestOnly(list);
+          .filter(n => !/embedding|tts|image-generation|live|audio/.test(n));
+        const latest = latestOnly(list.filter(n => n.startsWith("gemini")));
         if (latest.length) names = latest;
+        gemma = latestGemma(list.filter(n => n.startsWith("gemma")));
       }
     } catch {}
   }
-  sel.innerHTML = names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
-  const preferred = settings.model && names.includes(settings.model)
+  const opts = (arr) => arr.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  sel.innerHTML = `<optgroup label="Gemini">${opts(names)}</optgroup>`
+    + (gemma.length ? `<optgroup label="Gemma · open models">${opts(gemma)}</optgroup>` : "");
+  const all = [...names, ...gemma];
+  const preferred = settings.model && all.includes(settings.model)
     ? settings.model
     : names.find(n => /flash$/.test(n)) || names[0];
   sel.value = preferred;
   settings.model = preferred;
+}
+
+// Newest Gemma generation only (e.g. gemma-3-*), biggest size first.
+function latestGemma(list) {
+  const parsed = list
+    .map(name => { const m = name.match(/^gemma-(\d+)(n?)-e?(\d+)b-it$/); return m && { name, v: +m[1], n: m[2], size: +m[3] }; })
+    .filter(Boolean);
+  const top = Math.max(0, ...parsed.map(p => p.v));
+  return parsed
+    .filter(p => p.v === top)
+    .sort((a, b) => a.n.localeCompare(b.n) || b.size - a.size)
+    .map(p => p.name);
 }
 // Keep only the newest version of each model tier (Pro, Flash, Flash-Lite…),
 // hiding older generations and dated snapshots like "-001" or "-05-20".
@@ -577,7 +594,14 @@ async function send() {
       contents: history,
       generationConfig: { temperature: Number(settings.temperature) },
     };
-    if (settings.systemPrompt.trim()) body.systemInstruction = { parts: [{ text: settings.systemPrompt }] };
+    const sys = settings.systemPrompt.trim();
+    if (sys && settings.model.startsWith("gemma")) {
+      // Gemma doesn't accept system instructions, so fold them into the first message.
+      const [first, ...rest] = history;
+      body.contents = [{ role: "user", parts: [{ text: `Instructions: ${sys}` }, ...first.parts] }, ...rest];
+    } else if (sys) {
+      body.systemInstruction = { parts: [{ text: sys }] };
+    }
 
     const res = await fetch(`${API}/models/${settings.model}:streamGenerateContent?alt=sse`, {
       method: "POST",
