@@ -11,6 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <style>
   :root {
     --bg: #fbfbfd;
@@ -298,6 +300,13 @@
   .side-note { color: var(--muted); font-size: 12px; text-align: center; padding-top: 8px; letter-spacing: 0; }
 
   [hidden] { display: none !important; }
+  .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+  .katex { font-size: 1.08em; }
+  .mermaid-box {
+    margin: 1em 0; padding: 16px; border-radius: 14px; overflow-x: auto; text-align: center;
+    background: var(--glass); border: 1px solid var(--hairline);
+  }
+  .mermaid-box svg { max-width: 100%; height: auto; }
 
   /* ---------- Message actions ---------- */
   .msg.user .col { display: flex; flex-direction: column; align-items: flex-end; max-width: 80%; min-width: 0; }
@@ -907,7 +916,23 @@ let compareModels = store.get("gc.compare", []);
 let controller = null;
 
 marked.setOptions({ breaks: true, gfm: true });
-const render = (md) => DOMPurify.sanitize(marked.parse(md || ""));
+// Markdown → safe HTML, with maths. Maths ($…$, $$…$$, \(…\), \[…\]) is set aside first so
+// Markdown doesn't mangle it, then typeset with KaTeX. Code spans and blocks are left alone.
+function render(md) {
+  const math = [];
+  const stash = (tex, display) => { math.push({ tex, display }); return `@@M${math.length - 1}@@`; };
+  const src = (md || "").split(/(```[\s\S]*?(?:```|$)|`[^`\n]*`)/).map((seg, k) => k % 2 ? seg : seg
+    .replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g, (_, a, b) => stash(a ?? b, true))
+    .replace(/\\\((.+?)\\\)|\$(?!\s)([^$\n]+?)(?<!\s)\$(?!\d)/g, (_, a, b) => stash(a ?? b, false))
+  ).join("");
+  const html = DOMPurify.sanitize(marked.parse(src));
+  return html.replace(/@@M(\d+)@@/g, (_, i) => {
+    const { tex, display } = math[i];
+    if (!window.katex) return esc(display ? `$$${tex}$$` : `$${tex}$`);
+    try { return katex.renderToString(tex, { displayMode: display, throwOnError: false }); }
+    catch { return esc(tex); }
+  });
+}
 const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 /* ---------- Models ---------- */
@@ -1184,7 +1209,39 @@ async function retry(i) {
   await respond(targets);
 }
 
+// Diagrams: ```mermaid blocks become drawings (the library loads only when first needed)
+let mermaidReady;
+function loadMermaid() {
+  mermaidReady ??= new Promise((resolve, reject) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js";
+    sc.onload = () => resolve(window.mermaid);
+    sc.onerror = reject;
+    document.head.appendChild(sc);
+  });
+  return mermaidReady;
+}
+async function drawDiagrams(root) {
+  const blocks = [...root.querySelectorAll("pre > code.language-mermaid")];
+  if (!blocks.length) return;
+  let mm;
+  try { mm = await loadMermaid(); } catch { return; }
+  const dark = document.documentElement.dataset.theme === "dark" || matchMedia("(prefers-color-scheme: dark)").matches;
+  mm.initialize({ startOnLoad: false, securityLevel: "strict", theme: dark ? "dark" : "default" });
+  for (const code of blocks) {
+    const pre = code.parentElement;
+    if (!pre.isConnected) continue;
+    try {
+      const { svg } = await mm.render("mm" + uid(), code.textContent);
+      const box = el("div", "mermaid-box");
+      box.innerHTML = svg;
+      pre.replaceWith(box);
+    } catch { /* leave it as a code block */ }
+  }
+}
+
 function decorateCode(el) {
+  drawDiagrams(el);
   el.querySelectorAll("pre").forEach(pre => {
     if (pre.querySelector(".copy")) return;
     const btn = document.createElement("button");
@@ -2355,6 +2412,7 @@ Backdrop.setScene(settings.wallpaper);
 setBusy(false);
 renderPresets();
 Promise.all([loadModels(), hydrate(history)]).then(() => { store.set("gc.settings", settings); renderAll(); });
+addEventListener("load", () => { if (history.length && !controller) renderAll(); });
 </script>
 </body>
 </html>
