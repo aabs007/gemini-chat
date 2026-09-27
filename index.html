@@ -2,175 +2,364 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <title>Gemini Chat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
 <style>
   :root {
-    --bg: #f7f7f8;
+    --bg: #fbfbfd;
+    --bg-alt: #f5f5f7;
     --panel: #ffffff;
+    --glass: rgba(251, 251, 253, 0.72);
     --text: #1d1d1f;
-    --muted: #6b6b76;
-    --border: #e3e3e8;
-    --accent: #3b6ef5;
-    --accent-text: #ffffff;
-    --user-bubble: #e8eefe;
-    --code-bg: #f0f0f3;
-    --danger: #d93a3a;
+    --muted: #86868b;
+    --hairline: rgba(0, 0, 0, 0.08);
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --on-accent: #ffffff;
+    --code-bg: #f5f5f7;
+    --danger: #e30000;
+    --shadow: 0 2px 6px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,.06), 0 24px 60px rgba(0,0,0,.14);
+    --grad: linear-gradient(100deg, #2f6bff 0%, #8b5cf6 45%, #e6488a 80%, #ff8a3d 100%);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #131316;
-      --panel: #1c1c21;
-      --text: #ececf1;
-      --muted: #9a9aa6;
-      --border: #2e2e36;
-      --accent: #6d93ff;
-      --accent-text: #0d0d10;
-      --user-bubble: #26304a;
-      --code-bg: #26262d;
-      --danger: #ff6b6b;
+      --bg: #000000;
+      --bg-alt: #0d0d0f;
+      --panel: #1d1d1f;
+      --glass: rgba(22, 22, 23, 0.72);
+      --text: #f5f5f7;
+      --muted: #a1a1a6;
+      --hairline: rgba(255, 255, 255, 0.12);
+      --accent: #2997ff;
+      --accent-hover: #47a6ff;
+      --on-accent: #ffffff;
+      --code-bg: #1d1d1f;
+      --danger: #ff453a;
+      --shadow: 0 2px 6px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.5);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,.4), 0 24px 60px rgba(0,0,0,.6);
+      --grad: linear-gradient(100deg, #5b8cff 0%, #a78bfa 45%, #f472b6 80%, #ffa45c 100%);
     }
   }
-  * { box-sizing: border-box; }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; margin: 0; }
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: Inter, system-ui, -apple-system, sans-serif;
-    font-size: 15px;
-    line-height: 1.55;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Helvetica Neue", sans-serif;
+    font-size: 17px;
+    line-height: 1.47;
+    letter-spacing: -0.022em;
+    -webkit-font-smoothing: antialiased;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
-  button, select, textarea, input { font: inherit; color: inherit; }
+  button, select, textarea, input { font: inherit; color: inherit; letter-spacing: inherit; }
 
+  /* ---------- Glass nav ---------- */
   header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel);
+    position: absolute; inset: 0 0 auto 0; z-index: 10;
+    height: 52px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 max(16px, env(safe-area-inset-left));
+    background: var(--glass);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--hairline);
   }
-  header h1 { font-size: 16px; font-weight: 600; margin: 0; margin-right: auto; }
-  header h1 span { color: var(--accent); }
+  .brand {
+    margin-right: auto;
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 600; font-size: 17px; letter-spacing: -0.01em;
+  }
+  .brand .spark {
+    width: 22px; height: 22px; border-radius: 7px;
+    background: var(--grad);
+    display: grid; place-items: center;
+    color: #fff; font-size: 13px;
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: ""; position: absolute; right: 12px; top: 50%;
+    width: 6px; height: 6px; margin-top: -5px;
+    border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+    transform: rotate(45deg); pointer-events: none;
+  }
   select {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 8px;
-    max-width: 200px;
-  }
-  .btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 12px;
+    appearance: none; -webkit-appearance: none;
+    background: var(--bg-alt);
+    border: 1px solid var(--hairline);
+    border-radius: 980px;
+    padding: 6px 30px 6px 14px;
+    font-size: 14px;
+    max-width: 210px;
     cursor: pointer;
+    transition: border-color .2s;
   }
-  .btn:hover { border-color: var(--accent); }
-  .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  select:hover { border-color: var(--muted); }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 980px;
+    padding: 6px 12px;
+    font-size: 14px;
+    color: var(--accent);
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .pill:hover { background: var(--bg-alt); }
+  .pill svg { width: 16px; height: 16px; }
 
-  main { flex: 1; overflow-y: auto; }
-  #messages { max-width: 780px; margin: 0 auto; padding: 24px 16px 8px; }
-  .empty { text-align: center; color: var(--muted); margin-top: 18vh; }
-  .empty h2 { color: var(--text); font-weight: 600; margin-bottom: 6px; }
+  /* ---------- Conversation ---------- */
+  main {
+    flex: 1; overflow-y: auto;
+    padding-top: 52px;
+    scroll-behavior: smooth;
+  }
+  #messages {
+    max-width: 760px; margin: 0 auto;
+    padding: 40px 20px 180px;
+  }
 
-  .msg { margin-bottom: 20px; display: flex; }
+  .hero { text-align: center; padding: 11vh 0 0; animation: rise .9s cubic-bezier(.2,.8,.2,1) both; }
+  .eyebrow {
+    font-size: 14px; font-weight: 600; letter-spacing: 0;
+    color: var(--muted); text-transform: none; margin-bottom: 10px;
+  }
+  .hero h2 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif;
+    font-size: clamp(40px, 8vw, 72px);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    margin: 0 0 14px;
+  }
+  .hero h2 .grad {
+    background: var(--grad);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .hero p {
+    font-size: clamp(19px, 2.6vw, 24px);
+    line-height: 1.35;
+    color: var(--muted);
+    font-weight: 500;
+    max-width: 560px;
+    margin: 0 auto 40px;
+  }
+  .hero .cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: var(--on-accent);
+    border: none; border-radius: 980px;
+    padding: 12px 22px; font-size: 17px; cursor: pointer;
+    transition: background .2s, transform .2s;
+  }
+  .hero .cta:hover { background: var(--accent-hover); }
+  .hero .cta:active { transform: scale(.97); }
+
+  .cards {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    text-align: left;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s;
+    animation: rise .9s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .card:nth-child(2) { animation-delay: .06s; }
+  .card:nth-child(3) { animation-delay: .12s; }
+  .card:nth-child(4) { animation-delay: .18s; }
+  .card:hover { transform: translateY(-3px) scale(1.01); box-shadow: var(--shadow); }
+  .card .ic { font-size: 22px; margin-bottom: 8px; }
+  .card b { display: block; font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .card span { font-size: 14px; color: var(--muted); line-height: 1.35; }
+
+  .msg { margin-bottom: 26px; display: flex; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; }
   .msg.user { justify-content: flex-end; }
-  .msg .bubble { max-width: 100%; overflow-wrap: anywhere; }
+  .bubble { max-width: 100%; overflow-wrap: anywhere; }
   .msg.user .bubble {
-    background: var(--user-bubble);
-    padding: 10px 14px;
-    border-radius: 16px 16px 4px 16px;
-    max-width: 85%;
+    background: var(--accent);
+    color: var(--on-accent);
+    padding: 10px 16px;
+    border-radius: 20px 20px 6px 20px;
+    max-width: 80%;
     white-space: pre-wrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
   }
-  .msg.model .bubble { width: 100%; }
-  .msg.model .bubble > :first-child { margin-top: 0; }
+  .msg.model { gap: 14px; }
+  .msg.model::before {
+    content: "✦"; flex: none;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--grad); color: #fff;
+    display: grid; place-items: center; font-size: 14px;
+    margin-top: 2px;
+  }
+  .msg.model .bubble { flex: 1; min-width: 0; }
+  .msg.model .bubble > :first-child { margin-top: 3px; }
+  .msg.model .bubble > :last-child { margin-bottom: 0; }
   .msg.error .bubble { color: var(--danger); }
-  .bubble img.thumb { max-width: 160px; max-height: 160px; border-radius: 8px; display: block; margin-bottom: 6px; }
+  .bubble img.thumb { max-width: 200px; max-height: 200px; border-radius: 14px; display: block; margin: 2px 0 8px; }
+  .bubble h1, .bubble h2, .bubble h3 { letter-spacing: -0.03em; line-height: 1.2; margin: 1.2em 0 .5em; }
+  .bubble a { color: var(--accent); text-decoration: none; }
+  .bubble a:hover { text-decoration: underline; }
+  .bubble blockquote { margin: 0; padding-left: 14px; border-left: 3px solid var(--hairline); color: var(--muted); }
+
   pre {
     background: var(--code-bg);
-    padding: 12px;
-    border-radius: 8px;
+    border: 1px solid var(--hairline);
+    padding: 16px;
+    border-radius: 14px;
     overflow-x: auto;
     position: relative;
+    letter-spacing: 0;
   }
-  code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; }
-  :not(pre) > code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  code { font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace; font-size: 13.5px; }
+  :not(pre) > code { background: var(--code-bg); padding: 2px 6px; border-radius: 6px; }
   .copy {
-    position: absolute; top: 6px; right: 6px;
-    font-size: 12px; padding: 2px 8px;
-    background: var(--panel); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+    position: absolute; top: 8px; right: 8px;
+    font-size: 12px; padding: 4px 10px;
+    background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--hairline); border-radius: 980px; cursor: pointer;
+    opacity: 0; transition: opacity .2s;
   }
-  table { border-collapse: collapse; display: block; overflow-x: auto; }
-  th, td { border: 1px solid var(--border); padding: 6px 10px; }
-  .cursor::after { content: "▍"; color: var(--accent); animation: blink 1s steps(1) infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
+  pre:hover .copy, .copy:focus { opacity: 1; }
+  @media (hover: none) { .copy { opacity: 1; } }
+  table { border-collapse: collapse; display: block; overflow-x: auto; font-size: 15px; }
+  th, td { border-bottom: 1px solid var(--hairline); padding: 8px 12px; text-align: left; }
+  th { font-weight: 600; }
 
-  footer { padding: 10px 16px 16px; }
+  .typing { display: inline-flex; gap: 5px; padding: 8px 0; }
+  .typing i {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--muted);
+    animation: dot 1.2s infinite ease-in-out;
+  }
+  .typing i:nth-child(2) { animation-delay: .15s; }
+  .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- Floating composer ---------- */
+  footer {
+    position: absolute; inset: auto 0 0 0; z-index: 10;
+    padding: 24px 16px max(14px, env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 55%, transparent);
+    pointer-events: none;
+  }
   .composer {
-    max-width: 780px; margin: 0 auto;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 16px;
+    pointer-events: auto;
+    max-width: 760px; margin: 0 auto;
+    background: var(--glass);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border: 1px solid var(--hairline);
+    border-radius: 28px;
     padding: 8px;
+    box-shadow: var(--shadow);
+    transition: box-shadow .3s, border-color .3s;
   }
-  .composer:focus-within { border-color: var(--accent); }
-  #attachments { display: flex; gap: 6px; flex-wrap: wrap; }
-  #attachments:not(:empty) { padding: 4px 4px 8px; }
-  .att { position: relative; }
-  .att img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; display: block; }
+  .composer:focus-within { box-shadow: var(--shadow-lg); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  #attachments { display: flex; gap: 8px; flex-wrap: wrap; }
+  #attachments:not(:empty) { padding: 6px 6px 10px; }
+  .att { position: relative; animation: rise .3s both; }
+  .att img { width: 60px; height: 60px; object-fit: cover; border-radius: 12px; display: block; }
   .att button {
-    position: absolute; top: -6px; right: -6px; width: 20px; height: 20px;
-    border-radius: 50%; border: none; background: var(--text); color: var(--bg);
-    font-size: 12px; line-height: 20px; cursor: pointer; padding: 0;
+    position: absolute; top: -6px; right: -6px; width: 22px; height: 22px;
+    border-radius: 50%; border: 2px solid var(--panel); background: var(--text); color: var(--bg);
+    font-size: 11px; line-height: 18px; cursor: pointer; padding: 0;
   }
-  .row { display: flex; align-items: flex-end; gap: 6px; }
+  .row { display: flex; align-items: flex-end; gap: 4px; }
   textarea {
     flex: 1; border: none; outline: none; resize: none; background: transparent;
-    padding: 6px 4px; max-height: 200px;
+    padding: 8px 6px; max-height: 200px; line-height: 1.4;
   }
-  .icon { background: none; border: none; cursor: pointer; padding: 6px; color: var(--muted); font-size: 18px; }
-  .icon:hover { color: var(--accent); }
-  #send { border-radius: 10px; padding: 6px 14px; }
-  .hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 6px; }
+  textarea::placeholder { color: var(--muted); }
+  .round {
+    flex: none; width: 38px; height: 38px; border-radius: 50%;
+    display: grid; place-items: center;
+    border: none; cursor: pointer;
+    transition: background .2s, transform .15s, opacity .2s;
+  }
+  .round:active { transform: scale(.92); }
+  .round svg { width: 18px; height: 18px; }
+  #attachBtn { background: transparent; color: var(--muted); }
+  #attachBtn:hover { background: var(--bg-alt); color: var(--text); }
+  #send { background: var(--accent); color: var(--on-accent); }
+  #send:hover { background: var(--accent-hover); }
+  #send:disabled { opacity: .3; cursor: default; }
+  .hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; letter-spacing: 0; }
 
+  /* ---------- Settings sheet ---------- */
   dialog {
-    border: 1px solid var(--border); border-radius: 14px;
+    border: 1px solid var(--hairline); border-radius: 24px;
     background: var(--panel); color: var(--text);
-    width: min(480px, calc(100vw - 32px)); padding: 20px;
+    width: min(460px, calc(100vw - 32px)); padding: 28px;
+    box-shadow: var(--shadow-lg);
   }
-  dialog::backdrop { background: rgba(0,0,0,.45); }
-  dialog h2 { margin: 0 0 12px; font-size: 18px; }
-  dialog label { display: block; font-weight: 500; margin: 12px 0 4px; }
-  dialog input, dialog textarea {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; outline: none;
+  dialog[open] { animation: pop .35s cubic-bezier(.2,.9,.3,1.2) both; }
+  @keyframes pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+  dialog::backdrop { background: rgba(0,0,0,.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  dialog h2 { margin: 0 0 4px; font-size: 28px; letter-spacing: -0.03em; }
+  dialog .sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; }
+  dialog label { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin: 16px 0 6px; }
+  dialog label span { color: var(--muted); font-weight: 500; }
+  dialog input[type=password], dialog textarea {
+    width: 100%; background: var(--bg-alt); border: 1px solid transparent;
+    border-radius: 12px; padding: 11px 14px; outline: none; font-size: 15px;
+    transition: border-color .2s, box-shadow .2s;
   }
-  dialog textarea { min-height: 80px; resize: vertical; }
-  dialog small { color: var(--muted); display: block; margin-top: 4px; }
-  dialog a { color: var(--accent); }
-  .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  dialog input[type=password]:focus, dialog textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  dialog textarea { min-height: 84px; resize: vertical; }
+  dialog small { color: var(--muted); display: block; margin-top: 6px; font-size: 13px; line-height: 1.4; letter-spacing: 0; }
+  dialog a { color: var(--accent); text-decoration: none; }
+  dialog a:hover { text-decoration: underline; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+  .btn {
+    border-radius: 980px; padding: 9px 20px; font-size: 15px; cursor: pointer;
+    border: none; background: var(--bg-alt); transition: background .2s, transform .15s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--accent); color: var(--on-accent); }
+  .btn.primary:hover { background: var(--accent-hover); }
 
   @media (max-width: 560px) {
-    header h1 { font-size: 15px; }
-    select { max-width: 130px; }
-    #newChat .label { display: none; }
+    select { max-width: 140px; font-size: 13px; }
+    .pill .label { display: none; }
+    #messages { padding-top: 24px; }
+    .hint { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   }
 </style>
 </head>
 <body>
 <header>
-  <h1><span>✦</span> Gemini Chat</h1>
-  <select id="model" title="Model"></select>
-  <button class="btn" id="newChat" title="New chat">＋<span class="label"> New</span></button>
-  <button class="btn" id="openSettings" title="Settings">⚙</button>
+  <div class="brand"><span class="spark">✦</span> Gemini</div>
+  <div class="select-wrap"><select id="model" title="Model"></select></div>
+  <button class="pill" id="newChat" title="New chat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="label">New</span>
+  </button>
+  <button class="pill" id="openSettings" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
 </header>
 
 <main id="scroller">
@@ -181,28 +370,31 @@
   <div class="composer">
     <div id="attachments"></div>
     <div class="row">
-      <button class="icon" id="attachBtn" title="Attach image">📎</button>
+      <button class="round" id="attachBtn" title="Attach image">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
-      <textarea id="input" rows="1" placeholder="Message Gemini…"></textarea>
-      <button class="btn primary" id="send">Send</button>
+      <textarea id="input" rows="1" placeholder="Ask Gemini anything"></textarea>
+      <button class="round" id="send" title="Send"></button>
     </div>
   </div>
-  <div class="hint">Enter to send · Shift+Enter for a new line</div>
+  <div class="hint">Return to send · Shift + Return for a new line</div>
 </footer>
 
 <dialog id="settings">
   <form method="dialog">
     <h2>Settings</h2>
+    <p class="sub">Everything here stays on this device.</p>
     <label for="apiKey">Gemini API key</label>
     <input id="apiKey" type="password" placeholder="AIza…" autocomplete="off">
-    <small>Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. It's stored only in this browser and sent only to Google.</small>
-    <label for="systemPrompt">System instructions (optional)</label>
+    <small>Get a free key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. It's saved only in this browser and sent only to Google.</small>
+    <label for="systemPrompt">System instructions <span>Optional</span></label>
     <textarea id="systemPrompt" placeholder="e.g. You are a concise, friendly assistant."></textarea>
-    <label for="temperature">Temperature: <span id="tempVal"></span></label>
+    <label for="temperature">Creativity <span id="tempVal"></span></label>
     <input id="temperature" type="range" min="0" max="2" step="0.1">
     <div class="actions">
       <button class="btn" value="cancel" formnovalidate>Cancel</button>
-      <button class="btn primary" value="save" id="saveSettings">Save</button>
+      <button class="btn primary" value="save">Save</button>
     </div>
   </form>
 </dialog>
@@ -210,6 +402,14 @@
 <script>
 const API = "https://generativelanguage.googleapis.com/v1beta";
 const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
+const ICON_SEND = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`;
+const ICON_STOP = `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>`;
+const SUGGESTIONS = [
+  { ic: "💡", t: "Explain", d: "how black holes form, simply", p: "Explain how black holes form, in simple terms." },
+  { ic: "✍️", t: "Write", d: "a short poem about the sea", p: "Write a short poem about the sea." },
+  { ic: "🧑‍💻", t: "Code", d: "a to-do app in plain JavaScript", p: "Write a minimal to-do list app in plain HTML and JavaScript." },
+  { ic: "🗺️", t: "Plan", d: "a 3-day trip to Tokyo", p: "Plan a 3-day trip to Tokyo for a first-time visitor." },
+];
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -224,6 +424,7 @@ let controller = null;
 
 marked.setOptions({ breaks: true, gfm: true });
 const render = (md) => DOMPurify.sanitize(marked.parse(md || ""));
+const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 /* ---------- Models ---------- */
 async function loadModels() {
@@ -242,7 +443,7 @@ async function loadModels() {
       }
     } catch {}
   }
-  sel.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join("");
+  sel.innerHTML = names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
   const preferred = settings.model && names.includes(settings.model)
     ? settings.model
     : names.find(n => /flash$/.test(n)) || names[0];
@@ -255,13 +456,32 @@ $("model").onchange = (e) => { settings.model = e.target.value; store.set("gc.se
 function renderAll() {
   const box = $("messages");
   box.innerHTML = "";
-  if (!history.length) {
-    box.innerHTML = `<div class="empty"><h2>How can I help?</h2>
-      <div>${settings.apiKey ? "Ask anything, or attach an image." : "Open ⚙ Settings and paste your Gemini API key to begin."}</div></div>`;
-    return;
-  }
+  if (!history.length) { renderHero(); return; }
   for (const m of history) addBubble(m);
   scrollDown();
+}
+
+function renderHero() {
+  const box = $("messages");
+  const hasKey = !!settings.apiKey;
+  box.innerHTML = `
+    <section class="hero">
+      <div class="eyebrow">Powered by Google Gemini</div>
+      <h2>Ask anything.<br><span class="grad">Get brilliant answers.</span></h2>
+      <p>${hasKey
+        ? "Write, learn, plan and code, or drop in a photo and ask about it."
+        : "Add your free Gemini API key to get started. It only takes a minute."}</p>
+      ${hasKey
+        ? `<div class="cards">${SUGGESTIONS.map((s, i) =>
+            `<div class="card" data-i="${i}" role="button" tabindex="0"><div class="ic">${s.ic}</div><b>${s.t}</b><span>${s.d}</span></div>`).join("")}</div>`
+        : `<button class="cta" id="heroSetup">Add API key <span aria-hidden="true">›</span></button>`}
+    </section>`;
+  box.querySelectorAll(".card").forEach(c => {
+    const go = () => { $("input").value = SUGGESTIONS[c.dataset.i].p; autosize(); send(); };
+    c.onclick = go;
+    c.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+  });
+  $("heroSetup")?.addEventListener("click", openSettings);
 }
 
 function addBubble(m, extraClass = "") {
@@ -297,15 +517,15 @@ function decorateCode(el) {
     btn.textContent = "Copy";
     btn.onclick = () => {
       navigator.clipboard.writeText(pre.querySelector("code")?.innerText || pre.innerText);
-      btn.textContent = "Copied!";
+      btn.textContent = "Copied";
       setTimeout(() => (btn.textContent = "Copy"), 1200);
     };
     pre.appendChild(btn);
   });
 }
 
-function scrollDown() { const s = $("scroller"); s.scrollTop = s.scrollHeight; }
-function nearBottom() { const s = $("scroller"); return s.scrollHeight - s.scrollTop - s.clientHeight < 80; }
+function scrollDown() { const s = $("scroller"); s.scrollTo({ top: s.scrollHeight }); }
+function nearBottom() { const s = $("scroller"); return s.scrollHeight - s.scrollTop - s.clientHeight < 120; }
 
 /* ---------- Sending ---------- */
 async function send() {
@@ -324,7 +544,7 @@ async function send() {
   saveHistory();
 
   const bubble = addBubble({ role: "model", parts: [{ text: "" }] });
-  bubble.classList.add("cursor");
+  bubble.innerHTML = `<span class="typing"><i></i><i></i><i></i></span>`;
   scrollDown();
 
   controller = new AbortController();
@@ -381,8 +601,7 @@ async function send() {
       reply += reply ? "\n\n_(stopped)_" : "_(stopped)_";
     } else {
       bubble.parentElement.classList.add("error");
-      bubble.classList.remove("cursor");
-      bubble.textContent = "⚠ " + e.message;
+      bubble.textContent = e.message;
       history.pop();          // drop the failed user turn so the chat stays valid
       bubble.parentElement.previousElementSibling?.remove();
       $("input").value = text; autosize();
@@ -392,7 +611,6 @@ async function send() {
     }
   }
 
-  bubble.classList.remove("cursor");
   bubble.innerHTML = render(reply);
   decorateCode(bubble);
   history.push({ role: "model", parts: [{ text: reply }] });
@@ -402,7 +620,12 @@ async function send() {
 }
 
 function setBusy(b) {
-  $("send").textContent = b ? "Stop" : "Send";
+  $("send").innerHTML = b ? ICON_STOP : ICON_SEND;
+  $("send").title = b ? "Stop" : "Send";
+  updateSend();
+}
+function updateSend() {
+  $("send").disabled = !controller && !$("input").value.trim() && !pending.length;
 }
 
 function saveHistory() {
@@ -444,10 +667,11 @@ function renderAttachments() {
     d.querySelector("button").onclick = () => { pending.splice(i, 1); renderAttachments(); };
     box.appendChild(d);
   });
+  updateSend();
 }
 
 /* ---------- Input ---------- */
-function autosize() { const t = $("input"); t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
+function autosize() { const t = $("input"); t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; updateSend(); }
 $("input").addEventListener("input", autosize);
 $("input").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
@@ -480,8 +704,8 @@ $("settings").addEventListener("close", async () => {
 });
 
 /* ---------- Boot ---------- */
+setBusy(false);
 loadModels().then(() => { store.set("gc.settings", settings); renderAll(); });
-if (!settings.apiKey) setTimeout(openSettings, 300);
 </script>
 </body>
 </html>
