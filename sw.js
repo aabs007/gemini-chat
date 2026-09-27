@@ -1,7 +1,7 @@
 // Prism service worker: makes the app installable and lets it open offline.
 // Pages are fetched fresh when online (so updates show up right away) and
 // served from the cache when offline. Requests to AI providers are never touched.
-const CACHE = "prism-v1";
+const CACHE = "prism-v2";
 const SHELL = ["./", "index.html", "favicon.svg", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
