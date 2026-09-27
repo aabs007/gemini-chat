@@ -1,13 +1,14 @@
 # Gemini Chat
 
 A simple, single-page chat interface for Google's Gemini and Gemma models, plus
-fast open models (like Llama) through Groq. It's a single
+fast open models (like Llama) through Groq and Mistral's own models. It's a single
 `index.html` file with no build step and no server, so it works on GitHub Pages.
 
 ## Features
 - Streams replies as they're written
 - Choose the newest Gemini and Gemma models (the list loads automatically)
 - Optional: add a free Groq key for fast open models like Llama
+- Optional: add a free Mistral key for Mistral's models
 - Attach or paste images
 - Markdown and code blocks, with copy buttons
 - Optional system instructions and temperature setting
@@ -17,9 +18,11 @@ fast open models (like Llama) through Groq. It's a single
 1. Get a free API key at <https://aistudio.google.com/apikey>.
 2. Open the page, click **⚙ Settings**, and paste your key.
 3. Optional: get a free Groq key at <https://console.groq.com/keys> and paste it too.
+4. Optional: get a free Mistral key at <https://console.mistral.ai/api-keys> and paste it too.
 
 Your keys are saved only in your own browser (localStorage). Each key is sent
-only to its own provider (Google or Groq). It is **never** put in this repo, so it's safe to make the repo public.
+only to its own provider (Google, Groq or Mistral). Keys are **never** put in
+this repo, so it's safe to make the repo public.
 Each visitor enters their own key.
 
 ## Put it on GitHub Pages

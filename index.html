@@ -391,6 +391,9 @@
     <label for="groqKey">Groq API key <span>Optional</span></label>
     <input id="groqKey" type="password" placeholder="gsk_…" autocomplete="off">
     <small>Adds fast open models like Llama. Get a free key from <a href="https://console.groq.com/keys" target="_blank" rel="noopener">GroqCloud</a>. Sent only to Groq.</small>
+    <label for="mistralKey">Mistral API key <span>Optional</span></label>
+    <input id="mistralKey" type="password" placeholder="Your Mistral key" autocomplete="off">
+    <small>Adds Mistral's own models. Get a free key from <a href="https://console.mistral.ai/api-keys" target="_blank" rel="noopener">Mistral La Plateforme</a>. Sent only to Mistral.</small>
     <label for="systemPrompt">System instructions <span>Optional</span></label>
     <textarea id="systemPrompt" placeholder="e.g. You are a concise, friendly assistant."></textarea>
     <label for="temperature">Creativity <span id="tempVal"></span></label>
@@ -405,7 +408,33 @@
 <script>
 const API = "https://generativelanguage.googleapis.com/v1beta";
 const FALLBACK_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
-const GROQ_API = "https://api.groq.com/openai/v1";
+// Extra providers that speak the OpenAI chat format. Model values are "<provider>:<id>".
+const PROVIDERS = {
+  groq: {
+    label: "Groq · fast open models",
+    api: "https://api.groq.com/openai/v1",
+    key: "groqKey",
+    pickModels: (models) => models
+      .filter(m => m.active !== false && !/whisper|tts|guard|playai|orpheus|distil/i.test(m.id))
+      .map(m => m.id).sort(),
+    image: (url) => ({ url }),
+    maxTemp: 2,
+  },
+  mistral: {
+    label: "Mistral",
+    api: "https://api.mistral.ai/v1",
+    key: "mistralKey",
+    // Mistral lists every dated release too; keep only the "-latest" alias of each model.
+    pickModels: (models) => {
+      const chat = models.filter(m => m.capabilities?.completion_chat !== false && !m.deprecation
+        && !/embed|moderation|ocr|transcribe|voxtral/i.test(m.id));
+      const latest = chat.filter(m => /-latest$/.test(m.id));
+      return [...new Set((latest.length ? latest : chat).map(m => m.id))].sort();
+    },
+    image: (url) => url,
+    maxTemp: 1,
+  },
+};
 const FALLBACK_GEMMA = ["gemma-3-27b-it", "gemma-3-12b-it", "gemma-3-4b-it"];
 const ICON_SEND = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`;
 const ICON_STOP = `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>`;
@@ -422,11 +451,12 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 
-let settings = store.get("gc.settings", { apiKey: "", groqKey: "", systemPrompt: "", temperature: 1, model: "" });
+let settings = store.get("gc.settings", { apiKey: "", groqKey: "", mistralKey: "", systemPrompt: "", temperature: 1, model: "" });
 let history = store.get("gc.history", []);   // [{role:'user'|'model', parts:[...]}]
 settings.groqKey ??= "";
-const isGroq = (model) => model.startsWith("groq:");
-const keyFor = (model) => isGroq(model) ? settings.groqKey : settings.apiKey;
+settings.mistralKey ??= "";
+const providerOf = (model) => PROVIDERS[model.split(":")[0]] && model.split(":")[0];
+const keyFor = (model) => providerOf(model) ? settings[PROVIDERS[providerOf(model)].key] : settings.apiKey;
 let pending = [];                             // images waiting to send
 let controller = null;
 
@@ -453,31 +483,32 @@ async function loadModels() {
       }
     } catch {}
   }
-  const groq = await loadGroqModels();
-  const opts = (arr) => arr.map(n => `<option value="${esc(n)}">${esc(n.replace(/^groq:/, ""))}</option>`).join("");
+  const extra = await Promise.all(Object.keys(PROVIDERS).map(loadProviderModels));
+  const opts = (arr) => arr.map(n => `<option value="${esc(n)}">${esc(n.replace(/^\w+:/, ""))}</option>`).join("");
   sel.innerHTML = `<optgroup label="Gemini">${opts(names)}</optgroup>`
     + (gemma.length ? `<optgroup label="Gemma · open models">${opts(gemma)}</optgroup>` : "")
-    + (groq.length ? `<optgroup label="Groq · fast open models">${opts(groq)}</optgroup>` : "");
-  const all = [...names, ...gemma, ...groq];
+    + Object.keys(PROVIDERS).map((id, i) => extra[i].length
+        ? `<optgroup label="${PROVIDERS[id].label}">${opts(extra[i])}</optgroup>` : "").join("");
+  const others = extra.flat();
+  const all = [...names, ...gemma, ...others];
   const preferred = settings.model && all.includes(settings.model) && keyFor(settings.model)
     ? settings.model
-    : (!settings.apiKey && groq.length ? groq.find(n => /llama/.test(n)) || groq[0] : null)
+    : (!settings.apiKey && others.length ? others.find(n => /llama|mistral-medium/.test(n)) || others[0] : null)
       || names.find(n => /flash$/.test(n)) || names[0];
   sel.value = preferred;
   settings.model = preferred;
 }
 
-// Chat models from Groq (only when a Groq key is set), minus speech/safety models.
-async function loadGroqModels() {
-  if (!settings.groqKey) return [];
+// Chat models from an extra provider (only when its key is set).
+async function loadProviderModels(id) {
+  const prov = PROVIDERS[id];
+  const key = settings[prov.key];
+  if (!key) return [];
   try {
-    const r = await fetch(`${GROQ_API}/models`, { headers: { Authorization: `Bearer ${settings.groqKey}` } });
+    const r = await fetch(`${prov.api}/models`, { headers: { Authorization: `Bearer ${key}` } });
     if (!r.ok) return [];
     const data = await r.json();
-    return (data.data || [])
-      .filter(m => m.active !== false && !/whisper|tts|guard|playai|orpheus|distil/i.test(m.id))
-      .map(m => "groq:" + m.id)
-      .sort();
+    return prov.pickModels(data.data || []).map(m => `${id}:${m}`);
   } catch { return []; }
 }
 
@@ -525,14 +556,14 @@ function renderAll() {
 
 function renderHero() {
   const box = $("messages");
-  const hasKey = !!(settings.apiKey || settings.groqKey);
+  const hasKey = !!(settings.apiKey || settings.groqKey || settings.mistralKey);
   box.innerHTML = `
     <section class="hero">
       <div class="eyebrow">Powered by Google Gemini</div>
       <h2>Ask anything.<br><span class="grad">Get brilliant answers.</span></h2>
       <p>${hasKey
         ? "Write, learn, plan and code, or drop in a photo and ask about it."
-        : "Add a free Gemini or Groq API key to get started. It only takes a minute."}</p>
+        : "Add a free Gemini, Groq or Mistral API key to get started. It only takes a minute."}</p>
       ${hasKey
         ? `<div class="cards">${SUGGESTIONS.map((s, i) =>
             `<div class="card" data-i="${i}" role="button" tabindex="0"><div class="ic">${s.ic}</div><b>${s.t}</b><span>${s.d}</span></div>`).join("")}</div>`
@@ -615,7 +646,7 @@ async function send() {
 
   try {
     const res = await fetch(
-      ...(isGroq(settings.model) ? groqRequest() : geminiRequest()),
+      ...(providerOf(settings.model) ? openaiRequest() : geminiRequest()),
     );
     if (!res.ok) {
       let msg = `HTTP ${res.status}`;
@@ -637,7 +668,7 @@ async function send() {
         try {
           const chunk = JSON.parse(line.slice(5));
           if (chunk.error) throw new Error(`Blocked: ${chunk.error.message || "stream error"}`);
-          const t = isGroq(settings.model)
+          const t = providerOf(settings.model)
             ? chunk.choices?.[0]?.delta?.content || ""
             : (chunk.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("");
           if (t) {
@@ -695,8 +726,10 @@ function geminiRequest() {
   }];
 }
 
-// Groq speaks the OpenAI chat format, so translate our history into it.
-function groqRequest() {
+// Groq and Mistral speak the OpenAI chat format, so translate our history into it.
+function openaiRequest() {
+  const id = providerOf(settings.model);
+  const prov = PROVIDERS[id];
   const messages = [];
   const sys = settings.systemPrompt.trim();
   if (sys) messages.push({ role: "system", content: sys });
@@ -706,17 +739,17 @@ function groqRequest() {
     messages.push({
       role: m.role === "model" ? "assistant" : "user",
       content: images.length
-        ? [{ type: "text", text }, ...images.map(p => ({ type: "image_url", image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` } }))]
+        ? [{ type: "text", text }, ...images.map(p => ({ type: "image_url", image_url: prov.image(`data:${p.inlineData.mimeType};base64,${p.inlineData.data}`) }))]
         : text,
     });
   }
-  return [`${GROQ_API}/chat/completions`, {
+  return [`${prov.api}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.groqKey}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings[prov.key]}` },
     body: JSON.stringify({
-      model: settings.model.replace(/^groq:/, ""),
+      model: settings.model.slice(id.length + 1),
       messages,
-      temperature: Number(settings.temperature),
+      temperature: Math.min(Number(settings.temperature), prov.maxTemp),
       stream: true,
     }),
     signal: controller.signal,
@@ -790,6 +823,7 @@ $("newChat").onclick = () => {
 function openSettings() {
   $("apiKey").value = settings.apiKey;
   $("groqKey").value = settings.groqKey;
+  $("mistralKey").value = settings.mistralKey;
   $("systemPrompt").value = settings.systemPrompt;
   $("temperature").value = settings.temperature;
   $("tempVal").textContent = settings.temperature;
@@ -799,9 +833,9 @@ $("temperature").oninput = (e) => ($("tempVal").textContent = e.target.value);
 $("openSettings").onclick = openSettings;
 $("settings").addEventListener("close", async () => {
   if ($("settings").returnValue !== "save") return;
-  const keyChanged = $("apiKey").value.trim() !== settings.apiKey || $("groqKey").value.trim() !== settings.groqKey;
-  settings.apiKey = $("apiKey").value.trim();
-  settings.groqKey = $("groqKey").value.trim();
+  const keys = ["apiKey", "groqKey", "mistralKey"];
+  const keyChanged = keys.some(k => $(k).value.trim() !== settings[k]);
+  for (const k of keys) settings[k] = $(k).value.trim();
   settings.systemPrompt = $("systemPrompt").value;
   settings.temperature = Number($("temperature").value);
   store.set("gc.settings", settings);
