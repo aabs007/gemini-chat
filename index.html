@@ -278,13 +278,22 @@
     flex: 1; min-width: 0; padding: 9px 0; font-size: 14px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .chat-item .del {
-    flex: none; opacity: 0; border: none; background: none; color: var(--muted);
-    width: 28px; height: 28px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  .chat-item .ib {
+    flex: none; display: none; place-items: center; border: none; background: none; color: var(--muted);
+    width: 26px; height: 26px; border-radius: 8px; cursor: pointer; font-size: 13px; padding: 0;
   }
-  .chat-item:hover .del, .chat-item.active .del { opacity: 1; }
-  .chat-item .del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
-  @media (hover: none) { .chat-item .del { opacity: .7; } }
+  .chat-item .ib svg { width: 14px; height: 14px; }
+  .chat-item:hover .ib, .chat-item.active .ib { display: grid; }
+  .chat-item .ib:hover { color: var(--text); background: color-mix(in srgb, var(--text) 10%, transparent); }
+  .chat-item .ib.del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .chat-item .ib.pin.on { display: grid; color: var(--accent); }
+  @media (hover: none) { .chat-item .ib { display: grid; opacity: .75; } }
+  .side-io { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--hairline); margin-top: 6px; }
+  .side-io button {
+    flex: 1; border: 1px solid var(--hairline); background: transparent; border-radius: 10px;
+    padding: 8px; font-size: 13px; cursor: pointer; color: var(--text);
+  }
+  .side-io button:hover { border-color: var(--accent); color: var(--accent); }
   .side-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 30px 10px; }
   .side-note { color: var(--muted); font-size: 12px; text-align: center; padding-top: 8px; letter-spacing: 0; }
 
@@ -716,7 +725,12 @@
   </button>
   <input id="chatSearch" type="search" placeholder="Search chats" autocomplete="off">
   <div id="chatList"></div>
-  <div class="side-note">Chats are saved in this browser only.</div>
+  <div class="side-io">
+    <button type="button" id="exportBtn" title="Save all chats to a file">Export</button>
+    <button type="button" id="importBtn" title="Load chats from a file">Import</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+  <div class="side-note">Chats are saved in this browser only. Use Export / Import to move them.</div>
 </aside>
 
 <main id="scroller">
@@ -1470,7 +1484,7 @@ function saveHistory(hist = history, id = currentId) {
   const chat = chats.find(c => c.id === id);
   if (!chat) return;                          // deleted while a reply was streaming
   chat.messages = hist.map(slimMessage);
-  chat.title = titleFor(hist);
+  if (!chat.customTitle) chat.title = titleFor(hist);
   chat.updated = Date.now();
   chats.sort((a, b) => b.updated - a.updated);
   persistChats();
@@ -1566,21 +1580,73 @@ function renderChatList() {
     return;
   }
   const day = 864e5, today = new Date().setHours(0, 0, 0, 0);
-  const group = (t) => t >= today ? "Today" : t >= today - day ? "Yesterday"
-    : t >= today - 7 * day ? "Previous 7 days" : t >= today - 30 * day ? "Previous 30 days" : "Older";
+  const group = (c) => c.pinned ? "Pinned" : c.updated >= today ? "Today" : c.updated >= today - day ? "Yesterday"
+    : c.updated >= today - 7 * day ? "Previous 7 days" : c.updated >= today - 30 * day ? "Previous 30 days" : "Older";
+  const PIN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 4 4H6l4-4z"/><path d="M12 14v6"/></svg>`;
   let html = "", last = "";
-  for (const c of shown) {
-    const g = group(c.updated);
+  for (const c of [...shown.filter(c => c.pinned), ...shown.filter(c => !c.pinned)]) {
+    const g = group(c);
     if (g !== last) { html += `<div class="grp">${g}</div>`; last = g; }
     html += `<div class="chat-item${c.id === currentId ? " active" : ""}" data-id="${c.id}" title="${esc(c.title)}">
-      <span class="t">${esc(c.title)}</span><button class="del" title="Delete chat" aria-label="Delete chat">✕</button></div>`;
+      <span class="t">${esc(c.title)}</span>
+      <button class="ib pin${c.pinned ? " on" : ""}" data-act="pin" title="${c.pinned ? "Unpin" : "Pin"}" aria-label="${c.pinned ? "Unpin" : "Pin"} chat">${PIN}</button>
+      <button class="ib" data-act="rename" title="Rename" aria-label="Rename chat">${ICONS.edit}</button>
+      <button class="ib del" data-act="delete" title="Delete" aria-label="Delete chat">✕</button></div>`;
   }
   list.innerHTML = html;
-  list.querySelectorAll(".chat-item").forEach(el => {
-    el.onclick = () => { openChat(el.dataset.id); if (innerWidth < 900) toggleSide(false); };
-    el.querySelector(".del").onclick = (e) => { e.stopPropagation(); deleteChat(el.dataset.id); };
+  list.querySelectorAll(".chat-item").forEach(item => {
+    const id = item.dataset.id;
+    item.onclick = () => { openChat(id); if (innerWidth < 900) toggleSide(false); };
+    item.querySelectorAll(".ib").forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      if (b.dataset.act === "delete") return deleteChat(id);
+      const chat = chats.find(c => c.id === id);
+      if (b.dataset.act === "pin") chat.pinned = !chat.pinned;
+      else {
+        const name = prompt("Rename chat", chat.title)?.trim();
+        if (!name) return;
+        chat.title = name.slice(0, 80);
+        chat.customTitle = true;
+      }
+      persistChats(); renderChatList();
+    });
   });
 }
+// Export every chat (with its images and PDFs) to a JSON file
+$("exportBtn").onclick = async () => {
+  if (!chats.length) { alert("There are no chats to export yet."); return; }
+  const full = structuredClone(chats);
+  for (const c of full) await hydrate(c.messages);
+  for (const c of full) for (const m of c.messages) for (const p of m.parts) delete p.ref;
+  const blob = new Blob([JSON.stringify({ app: "prism", version: 1, exported: new Date().toISOString(), chats: full })], { type: "application/json" });
+  const a = el("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `prism-chats-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+};
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").onchange = async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { alert("That file isn't a Prism chat export."); return; }
+  const incoming = Array.isArray(data?.chats) ? data.chats : null;
+  if (!incoming) { alert("That file isn't a Prism chat export."); return; }
+  let added = 0, updated = 0;
+  for (const c of incoming) {
+    if (!c?.id || !Array.isArray(c.messages)) continue;
+    const clean = { ...c, messages: c.messages.filter(m => m && Array.isArray(m.parts)).map(slimMessage) };
+    const i = chats.findIndex(x => x.id === c.id);
+    if (i < 0) { chats.push(clean); added++; }
+    else if ((c.updated || 0) > (chats[i].updated || 0)) { chats[i] = clean; updated++; }
+  }
+  chats.sort((a, b) => b.updated - a.updated);
+  persistChats(); renderChatList();
+  alert(`Imported ${added} new chat${added === 1 ? "" : "s"}${updated ? ` and updated ${updated}` : ""}.`);
+};
+
 function toggleSide(open = !document.body.classList.contains("side-open")) {
   document.body.classList.toggle("side-open", open);
   if (open) renderChatList();
